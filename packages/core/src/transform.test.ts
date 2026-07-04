@@ -98,6 +98,20 @@ describe("transform", () => {
     expect(result!.css).toContain(`.${classB}`);
   });
 
+  it("生成したクラス名の一覧を返す", () => {
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`color: red;\`;`,
+      `const b = css\`color: blue;\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    const classA = extractClassName(result!.code, "a");
+    const classB = extractClassName(result!.code, "b");
+    expect(result!.classNames).toEqual([classA, classB]);
+  });
+
   it("ネスト（&:hover）を含む CSS を処理できる", () => {
     const code = [
       `import { css } from "@best-css/core";`,

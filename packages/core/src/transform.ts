@@ -15,6 +15,8 @@ export interface TransformResult {
   code: string;
   /** 抽出・スコープ化された CSS */
   css: string;
+  /** このファイルから生成したクラス名（ビルド時の短縮リネームの対象特定に使う） */
+  classNames: string[];
 }
 
 // oxc-parser の AST 型を最小限の構造型で扱う。
@@ -126,6 +128,7 @@ export function transform(
 
   const ms = new MagicString(code);
   const cssChunks: string[] = [];
+  const classNames: string[] = [];
 
   for (const tag of tags) {
     if (tag.quasi.expressions.length > 0) {
@@ -136,6 +139,7 @@ export function transform(
     }
     const rawCss = tag.quasi.quasis[0]?.value.raw ?? "";
     const className = generateClassName(rawCss);
+    classNames.push(className);
     cssChunks.push(`.${className} {${rawCss}}`);
     ms.overwrite(tag.start, tag.end, JSON.stringify(className));
   }
@@ -160,5 +164,5 @@ export function transform(
     );
   }
 
-  return { code: ms.toString(), css: cssOutput };
+  return { code: ms.toString(), css: cssOutput, classNames };
 }

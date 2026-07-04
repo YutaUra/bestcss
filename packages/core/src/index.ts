@@ -1,4 +1,5 @@
 export { generateClassName } from "./class-name.js";
+export { applyRename, createRenameMap } from "./class-rename.js";
 export { dedupeCss } from "./dedupe.js";
 export { css } from "./css.js";
 export {

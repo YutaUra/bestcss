@@ -1,4 +1,10 @@
-import { dedupeCss, generateClassName, transform } from "@best-css/core";
+import {
+  applyRename,
+  createRenameMap,
+  dedupeCss,
+  generateClassName,
+  transform,
+} from "@best-css/core";
 import type { Plugin } from "vite";
 
 const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
@@ -13,8 +19,21 @@ const VIRTUAL_CSS_SUFFIX = ".best-css.css";
 /** 仮想 CSS モジュールの id からハッシュクエリを外し、Map のキーに揃える */
 const stripQuery = (id: string): string => id.split("?")[0] ?? id;
 
-export function bestCss(): Plugin {
+export interface BestCssOptions {
+  /**
+   * ビルド時にクラス名を使用頻度順の短い名前（a, b, ...）へ振り直す。
+   * 無効化は、SSR した HTML を長期キャッシュする等でクラス名の
+   * ビルド間安定性を優先したい場合を想定している
+   *
+   * @default true
+   */
+  minifyClassNames?: boolean;
+}
+
+export function bestCss(options: BestCssOptions = {}): Plugin {
+  const minifyClassNames = options.minifyClassNames ?? true;
   const extractedCss = new Map<string, string>();
+  const generatedClassNames = new Set<string>();
 
   return {
     name: "best-css",
@@ -48,6 +67,9 @@ export function bestCss(): Plugin {
 
       const cssId = id + VIRTUAL_CSS_SUFFIX;
       extractedCss.set(cssId, result.css);
+      for (const className of result.classNames) {
+        generatedClassNames.add(className);
+      }
 
       // import URL に CSS の内容ハッシュを付ける理由: ブラウザは ESM モジュールを
       // URL 単位でキャッシュするため、サーバー側の内容更新だけでは再取得されない。
@@ -72,6 +94,37 @@ export function bestCss(): Plugin {
         for (const [fileName, output] of Object.entries(bundle)) {
           if (output.type === "asset" && fileName.endsWith(".css")) {
             output.source = dedupeCss(String(output.source));
+          }
+        }
+
+        if (!minifyClassNames || generatedClassNames.size === 0) {
+          return;
+        }
+
+        // 使用頻度は JS チャンク内の静的な出現回数を代理指標にする。
+        // 実行時の描画回数は分からないが、全クラスが 1〜3 文字になるため
+        // 順位の精度がサイズに与える影響は小さい
+        const frequencies = new Map<string, number>(
+          [...generatedClassNames].map((name) => [name, 0]),
+        );
+        for (const output of Object.values(bundle)) {
+          if (output.type !== "chunk") {
+            continue;
+          }
+          for (const matched of output.code.matchAll(/\bbc[a-z0-9]+\b/g)) {
+            const count = frequencies.get(matched[0]);
+            if (count !== undefined) {
+              frequencies.set(matched[0], count + 1);
+            }
+          }
+        }
+
+        const renameMap = createRenameMap(frequencies);
+        for (const [fileName, output] of Object.entries(bundle)) {
+          if (output.type === "chunk") {
+            output.code = applyRename(output.code, renameMap);
+          } else if (fileName.endsWith(".css")) {
+            output.source = applyRename(String(output.source), renameMap);
           }
         }
       },
