@@ -80,7 +80,7 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 
 **完了条件**:
 - [x] webpack で css`` の抽出・ゼロランタイムが動く（@best-css/webpack-loader、実ビルドテストで検証）
-- [ ] Next.js（Turbopack）の example で動く（`turbopack.rules` + `as: '*.css'` の検証）
+- [x] Next.js（Turbopack）の example で動く（`turbopack.rules` + `as: '*.css'` を build / dev で検証。examples/nextjs）
 - [ ] loader 版のサイズ最適化（クラス名短縮・重複排除）の要否判断と実装
 
 ## マイルストーン
@@ -95,7 +95,7 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 | M5.5 | SSR 対応スイート（keyframes / sourcemap / ssr オプション / ルート分割） | ✅ 完了 |
 | M6 | 実プロジェクトへの導入開始（Phase 3） | ⬜ 未着手（導入先の決定待ち） |
 | M7 | Vite 以外のビルド環境の技術検証（Phase 4） | 🟦 進行中（webpack loader 実証済み） |
-| M8 | Next.js（Turbopack）example | ⬜ 未着手 |
+| M8 | Next.js（Turbopack）example | ✅ 完了 |
 
 ## 計画の見直しトリガー
 

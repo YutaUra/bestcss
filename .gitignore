@@ -4,3 +4,6 @@ dist/
 .DS_Store
 .claude/
 storybook-static/
+.next/
+out/
+next-env.d.ts

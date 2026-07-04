@@ -14,5 +14,8 @@ export default function bestCssCssLoader(
   source: string,
 ): string {
   const result = transform(source, { filename: this.resourcePath });
-  return result?.css ?? "";
+  // css`` を含まない入力はそのまま返す（冪等）。Turbopack は as: "*.css" の
+  // 適用後にルールを再評価することがあり、2 周目の入力は抽出済みの
+  // CSS テキストになるため、素通しできないと空になってしまう
+  return result?.css ?? source;
 }
