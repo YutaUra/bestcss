@@ -1,6 +1,6 @@
 > **Stability**: 🌀 evolving
-> **最終更新**: 2026-07-04（Phase 2 完了・Phase 3 を dogfooding に差し替え）
-> **直近の変更 ADR**: なし（初版）
+> **最終更新**: 2026-07-05（SSR 対応スイート完了を反映）
+> **直近の変更 ADR**: [ADR-0006](decisions/0006-rename-map-sharing.md) / [ADR-0007](decisions/0007-route-styles.md)
 
 # Plan — best-css
 
@@ -50,9 +50,22 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 
 **ベンチマーク結果（2026-07-04、[bench/RESULTS.md](../bench/RESULTS.md)）**: 同一ダッシュボード UI の合計 gzip で best-css 1,494 / CSS Modules 1,908 / tailwind 2,917 bytes（クラス名短縮込み。tailwind 比 51%）。宣言単位共有の伸びしろは raw 27% が理論上限だが gzip 実効はさらに小さく、クラス名短縮（ADR-0004）を優先実装した。
 
+### Phase 2.5: 機能ギャップの解消と SSR 対応（2026-07-04〜05 完了）
+
+星取表（README）の不足解消と、HonoX での MPA/SSR 検証から生まれた対応群:
+
+- [x] スコープ付き @keyframes（css`` 内に書ける）
+- [x] JS / CSS ソースマップ（DevTools から css`` の元位置へ辿れる）
+- [x] MPA ビルドでの CSS 分割の契約テスト
+- [x] SSR 対応スイート: `ssr` オプションに集約（リネーム表の自動共有 [ADR-0006](decisions/0006-rename-map-sharing.md)、ルート単位 CSS 分割 [ADR-0007](decisions/0007-route-styles.md)、routeCssHrefs ヘルパー、virtual:best-css/dev-styles）
+- [x] opt-in reset（modern-normalize 委譲）
+- [x] examples 3 構成（Vite+React SPA / HonoX MPA+SSR / Storybook）
+
 ### Phase 3: dogfooding
 
 **目標**: 作者の実プロジェクトに導入し、実利用のフィードバックから改善課題を収集する（styled 構文は [ADR-0005](decisions/0005-drop-styled-components-api.md) によりスコープ外）
+
+**前提となる未決事項**: 導入先プロジェクトの特定と、パッケージの参照手段（npm 公開 / private registry / workspace）。CI も導入前に整えることが望ましい
 
 **完了条件**:
 - [ ] 作者の実プロジェクトへの導入が開始されている
@@ -74,7 +87,9 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 | M3 | Vite プラグイン統合（build） | ✅ 完了 |
 | M4 | dev サーバー / HMR 対応 → **MVP 完了** | ✅ 完了 |
 | M5 | サイズ最適化の技術検証（Phase 2） | ✅ 完了（宣言単位共有のみ保留として切り出し） |
-| M6 | 実プロジェクトへの導入開始（Phase 3） | ⬜ 未着手 |
+| M5.5 | SSR 対応スイート（keyframes / sourcemap / ssr オプション / ルート分割） | ✅ 完了 |
+| M6 | 実プロジェクトへの導入開始（Phase 3） | ⬜ 未着手（導入先の決定待ち） |
+| M7 | Vite 以外のビルド環境の技術検証（Phase 4） | ⬜ 未着手 |
 
 ## 計画の見直しトリガー
 
