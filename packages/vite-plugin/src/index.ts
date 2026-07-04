@@ -1,4 +1,4 @@
-import { generateClassName, transform } from "@best-css/core";
+import { dedupeCss, generateClassName, transform } from "@best-css/core";
 import type { Plugin } from "vite";
 
 const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
@@ -58,6 +58,23 @@ export function bestCss(): Plugin {
         code: `${result.code}\nimport ${JSON.stringify(versionedCssId)};\n`,
         map: null,
       };
+    },
+
+    generateBundle: {
+      // プラグイン全体は enforce: "pre" のため、order: "post" を付けないと
+      // Vite 内部（css-post）が CSS アセットを bundle に追加する前に走ってしまう
+      order: "post",
+      handler(_options, bundle) {
+        // 同一内容の css`` が複数ファイルにあると、クラス名は内容ハッシュで
+        // 同一に収束する一方、CSS 本文は各仮想モジュールから重複して出力される。
+        // Vite の cssMinify（Lightning CSS）も重複をマージするが、minify を
+        // 無効にした構成でも「サイズ最適化」の保証が消えないよう自前でも行う
+        for (const [fileName, output] of Object.entries(bundle)) {
+          if (output.type === "asset" && fileName.endsWith(".css")) {
+            output.source = dedupeCss(String(output.source));
+          }
+        }
+      },
     },
   };
 }
