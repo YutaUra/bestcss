@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
     rules: {
       "*.tsx": {
         condition: {
-          all: [{ not: "foreign" }, { not: { query: /best-css/ } }],
+          all: [{ not: "foreign" }, { not: { query: /bestcss/ } }],
         },
         loaders: [
           {
@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
         ],
       },
       "*": {
-        condition: { all: [{ not: "foreign" }, { query: /best-css/ }] },
+        condition: { all: [{ not: "foreign" }, { query: /bestcss/ }] },
         loaders: ["@bestcss/webpack-loader/css"],
         as: "*.css",
       },
