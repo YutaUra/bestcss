@@ -1,3 +1,4 @@
+import { encode } from "@jridgewell/sourcemap-codec";
 import { transform as transformCss } from "lightningcss";
 import MagicString, { type SourceMap } from "magic-string";
 import { parseSync } from "oxc-parser";
@@ -20,6 +21,19 @@ export interface TransformResult {
   classNames: string[];
   /** 変換後コードから元ソースへのソースマップ */
   map: SourceMap;
+  /** 出力 CSS から元ソース（css`` の位置）へのソースマップ（JSON 文字列） */
+  cssMap: string;
+}
+
+/** code 中のオフセットを 0-based の行番号に変換する */
+function lineNumberAt(code: string, offset: number): number {
+  let line = 0;
+  for (let i = 0; i < offset && i < code.length; i++) {
+    if (code[i] === "\n") {
+      line++;
+    }
+  }
+  return line;
 }
 
 // oxc-parser の AST 型を最小限の構造型で扱う。
@@ -137,7 +151,10 @@ export function transform(
   // クラス化より先に全ブロック分のリネーム表を確定させる必要がある
   const blocks: Array<{ tag: TaggedTemplateNode; css: string }> = [];
   const keyframesRenames = new Map<string, string>();
-  const keyframesStatements = new Map<string, string>();
+  const keyframesStatements = new Map<
+    string,
+    { statement: string; originLine: number }
+  >();
   for (const tag of tags) {
     if (tag.quasi.expressions.length > 0) {
       throw new Error(
@@ -150,25 +167,62 @@ export function transform(
     for (const kf of keyframes) {
       keyframesRenames.set(kf.name, kf.scopedName);
       // scopedName は内容ハッシュなので、同一内容はここで自然に 1 つに収束する
-      keyframesStatements.set(
-        kf.scopedName,
-        `@keyframes ${kf.scopedName} {${kf.body}}`,
-      );
+      if (!keyframesStatements.has(kf.scopedName)) {
+        keyframesStatements.set(kf.scopedName, {
+          statement: `@keyframes ${kf.scopedName} {${kf.body}}`,
+          originLine: lineNumberAt(code, tag.start),
+        });
+      }
     }
     blocks.push({ tag, css: blockCss });
   }
 
   // 2 パス目: animation 参照を書き換えてからクラス化する。
   // クラス名は書き換え後の CSS から生成し、意味的に同じブロックが
-  // ファイルを跨いで同一クラス名に収束するようにする
-  const cssChunks: string[] = [...keyframesStatements.values()];
+  // ファイルを跨いで同一クラス名に収束するようにする。
+  // あわせて、合成 CSS の各行が元ソースのどの行由来かを記録し、
+  // 出力 CSS → tsx のソースマップの入力にする
+  const cssChunks: string[] = [];
+  const lineOrigins: number[] = [];
+  const pushChunk = (
+    text: string,
+    originLine: number,
+    trackPerLine: boolean,
+  ): void => {
+    const lineCount = text.split("\n").length;
+    for (let i = 0; i < lineCount; i++) {
+      // trackPerLine 時はブロック内の行ずれを追う（ブロック先頭行 + i）。
+      // keyframes は抽出で行構造が変わるため定義ブロックの先頭行に丸める
+      lineOrigins.push(trackPerLine ? originLine + i : originLine);
+    }
+    cssChunks.push(text);
+  };
+
+  for (const kf of keyframesStatements.values()) {
+    pushChunk(kf.statement, kf.originLine, false);
+  }
   for (const block of blocks) {
     const rewritten = rewriteAnimationNames(block.css, keyframesRenames);
     const className = generateClassName(rewritten);
     classNames.push(className);
-    cssChunks.push(`.${className} {${rewritten}}`);
+    pushChunk(
+      `.${className} {${rewritten}}`,
+      lineNumberAt(code, block.tag.start),
+      true,
+    );
     ms.overwrite(block.tag.start, block.tag.end, JSON.stringify(className));
   }
+
+  // 合成 CSS → 元 tsx の行マッピング。Lightning CSS に inputSourceMap として
+  // 渡すことで、出力 CSS のソースマップが元 tsx まで連鎖する
+  const inputSourceMap = JSON.stringify({
+    version: 3,
+    file: options.filename,
+    sources: [options.filename],
+    sourcesContent: [code],
+    names: [],
+    mappings: encode(lineOrigins.map((line) => [[0, 0, line, 0]])),
+  });
 
   // 変換後は css の参照が残らないため import ごと除去する（ゼロランタイム）。
   // 現状 core の公開 API は css のみなので、この import 文に他の specifier が
@@ -176,13 +230,18 @@ export function transform(
   ms.remove(cssImport.declaration.start, cssImport.declaration.end);
 
   let cssOutput: string;
+  let cssMap: string;
   try {
     const result = transformCss({
       filename: options.filename,
       code: Buffer.from(cssChunks.join("\n")),
       minify: false,
+      sourceMap: true,
+      inputSourceMap,
     });
     cssOutput = result.code.toString();
+    // map が返らない場合は入力マップで代用する（行単位の近似としては有効）
+    cssMap = result.map?.toString() ?? inputSourceMap;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
@@ -193,6 +252,7 @@ export function transform(
   return {
     code: ms.toString(),
     css: cssOutput,
+    cssMap,
     classNames,
     // hires: "boundary" は行内のトークン境界単位でマッピングを出す。
     // 置換箇所（css`` → 文字列リテラル）以外の行内位置も正確に保ち、

@@ -32,7 +32,7 @@ export interface BestCssOptions {
 
 export function bestCss(options: BestCssOptions = {}): Plugin {
   const minifyClassNames = options.minifyClassNames ?? true;
-  const extractedCss = new Map<string, string>();
+  const extractedCss = new Map<string, { css: string; map: string }>();
   const generatedClassNames = new Set<string>();
 
   return {
@@ -51,7 +51,13 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     },
 
     load(id) {
-      return extractedCss.get(stripQuery(id)) ?? null;
+      const entry = extractedCss.get(stripQuery(id));
+      if (entry === undefined) {
+        return null;
+      }
+      // map を添えることで、css.devSourcemap 有効時に DevTools の Styles
+      // ペインから元の tsx（css`` の位置）へ辿れるようになる
+      return { code: entry.css, map: entry.map };
     },
 
     transform(code, id) {
@@ -66,7 +72,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       }
 
       const cssId = id + VIRTUAL_CSS_SUFFIX;
-      extractedCss.set(cssId, result.css);
+      extractedCss.set(cssId, { css: result.css, map: result.cssMap });
       for (const className of result.classNames) {
         generatedClassNames.add(className);
       }

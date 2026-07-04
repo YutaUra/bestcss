@@ -73,6 +73,9 @@ importers:
 
   packages/core:
     dependencies:
+      '@jridgewell/sourcemap-codec':
+        specifier: ^1.5.5
+        version: 1.5.5
       lightningcss:
         specifier: ^1.32.0
         version: 1.32.0

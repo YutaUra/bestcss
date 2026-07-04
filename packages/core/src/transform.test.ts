@@ -1,3 +1,4 @@
+import { decode } from "@jridgewell/sourcemap-codec";
 import { describe, expect, it } from "vitest";
 import { transform } from "./transform.js";
 
@@ -221,6 +222,32 @@ describe("transform", () => {
     expect(result!.map).toBeDefined();
     expect(result!.map.sources).toContain(FILENAME);
     expect(result!.map.mappings.length).toBeGreaterThan(0);
+  });
+
+  it("出力 CSS から css`` の元位置へのソースマップを返す", () => {
+    // Arrange: css`` は 0-based で 2 行目にある
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const other = 1;`,
+      `const button = css\`color: red;\`;`,
+    ].join("\n");
+
+    // Act
+    const result = transform(code, { filename: FILENAME });
+
+    // Assert
+    const cssMap = JSON.parse(result!.cssMap) as {
+      sources: string[];
+      sourcesContent: string[];
+      mappings: string;
+    };
+    expect(cssMap.sources).toContain(FILENAME);
+    // DevTools がソース本文を表示できるよう元コードを同梱する
+    expect(cssMap.sourcesContent[0]).toContain("css`");
+    // いずれかのセグメントが css`` のある行（0-based: 2）を指す
+    const decoded = decode(cssMap.mappings);
+    const originalLines = decoded.flat().map((segment) => segment[2]);
+    expect(originalLines).toContain(2);
   });
 
   it("不正な CSS はファイル名を含むエラーで拒否する", () => {

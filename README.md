@@ -91,6 +91,18 @@ const title = css`
 
 `` `${base} ${variant}` `` のような合成は可能だが、同一プロパティが衝突したときの勝敗は **className に並べた順ではなく、スタイルシート内でのルールの順** で決まる。ベースとバリアントで同じプロパティを両方に書かないのが安全。
 
+### DevTools からスタイルの定義元へ辿る
+
+Vite の `css.devSourcemap` を有効にすると、dev サーバーで DevTools の Styles ペインのソースリンクが css`` を書いた tsx の位置を指すようになる（無効時もリンク名 `App.tsx.best-css.css` からファイルまでは特定できる）:
+
+```ts
+// vite.config.ts
+export default defineConfig({
+  plugins: [react(), bestCss()],
+  css: { devSourcemap: true },
+});
+```
+
 ### テスト（Vitest）
 
 css`` はビルド時変換が前提のため、プラグインなしでテストを実行すると実行時エラーになる。Vitest は Vite ベースなので、`vitest.config.ts` に同じプラグインを並べるだけでよい:
@@ -160,7 +172,7 @@ pnpm --filter example-vite-react dev       # サンプルアプリを起動
 1. ~~スコープ付き @keyframes~~ — 2026-07-04 解消（css`` 内に書けるようになった）
 2. **Vite 以外のビルド環境対応** — Phase 4 として計画済み（[docs/plan.md](docs/plan.md)）
 3. **エディタ支援の検証** — 既存拡張で css`` のハイライト・補完が効くかの確認と案内
-4. ~~ソースマップ~~ — 2026-07-04 解消（変換後コードから元 tsx への sourcemap を返す）
+4. ~~ソースマップ~~ — 2026-07-04 解消（JS: 変換後コード → 元 tsx。CSS: `css.devSourcemap` 有効時に DevTools から css`` の位置へ辿れる）
 
 ## ドキュメント
 

@@ -19,6 +19,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@jridgewell/sourcemap-codec": "^1.5.5",
     "lightningcss": "^1.32.0",
     "magic-string": "^0.30.21",
     "modern-normalize": "^3.0.1",
