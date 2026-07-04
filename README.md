@@ -1,0 +1,53 @@
+# best-css
+
+ゼロランタイム × コロケーション × 生 CSS 文法 × サイズ最適化を「全部取り」する CSS ライブラリ。
+
+## なぜこれが必要か
+
+既存の CSS ライブラリはそれぞれ何かを犠牲にしている。tailwindcss はゼロランタイムと引き換えに HTML の class を肥大させ、styled-components はコロケーションと引き換えにランタイムコストを払い、vanilla-extract / panda-css はゼロランタイムと引き換えに生 CSS 文法を捨て、CSS Modules はファイル分割と引き換えにファイル往復を強いる。
+
+best-css は、JSX 内に書いた生 CSS をビルド時に抽出・変換することで、これらのトレードオフを同時に解消することを目指す。詳細な思想は [docs/charter.md](docs/charter.md) を参照。
+
+## 目指す書き味（設計中）
+
+```tsx
+// Button.tsx — CSS はコンポーネントの隣に、生 CSS 文法で書く
+const button = css`
+  padding: 8px 16px;
+  border-radius: 4px;
+
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
+export const Button = () => <button className={button}>Click</button>;
+```
+
+ビルドすると CSS はファイルとして分割出力され、ランタイムには何も残らない。
+
+> **Note**: 現在は設計・立ち上げフェーズであり、まだ動くコードはない。進捗は [docs/plan.md](docs/plan.md) を参照。
+
+## 特徴（目標）
+
+- **ゼロランタイム** — 実行時に CSS を生成するコードを一切出荷しない
+- **HTML / CSS 両方のサイズ最適化** — class name の肥大と CSS の重複を両方防ぐ
+- **コロケーション** — JSX の中に CSS を置き、スコープを明確にする
+- **自然なファイル分割** — 巨大な単一 CSS ではなく、モジュール単位で分割・読み込み
+- **生 CSS 文法** — styled-components 風の書き味で、既存の CSS 資産をそのまま活用できる
+- **Vite ファースト** — Vite プラグインとして簡単に統合（将来的に Next.js 等へも展開）
+
+## ドキュメント
+
+- [docs/charter.md](docs/charter.md) — このプロジェクトの存在意義・スコープ・撤退条件 🪨
+- [docs/plan.md](docs/plan.md) — フェーズ・マイルストーン 🌀
+- [docs/architecture.md](docs/architecture.md) — 技術スタック・設計判断 🌊
+- [docs/decisions/](docs/decisions/) — Architecture Decision Records
+
+## 貢献
+
+現在は作者（[@YutaUra](https://github.com/YutaUra)）による個人開発フェーズ。思想が実証できた段階で OSS として公開し、貢献を受け入れる体制を整える予定。
+
+## ライセンス
+
+TBD（OSS 公開時に MIT を予定）
