@@ -1,4 +1,4 @@
-import { transform } from "@best-css/core";
+import { generateClassName, transform } from "@best-css/core";
 import type { Plugin } from "vite";
 
 const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
@@ -10,34 +10,8 @@ const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
  */
 const VIRTUAL_CSS_SUFFIX = ".best-css.css";
 
-// Vite の DevEnvironment が持つモジュールグラフの最小構造型。
-// vite の型に直接依存しない理由: build 時は moduleGraph が存在せず、
-// 判別を「プロパティの有無」で行うため構造型のほうが実態に合う
-interface ModuleGraphLike {
-  getModuleById(id: string): unknown;
-  invalidateModule(mod: never): void;
-}
-
-/**
- * 仮想 CSS モジュールをモジュールグラフ上で無効化する（dev のみ）。
- *
- * 元の tsx が編集されても仮想 CSS モジュール自体には「ファイル変更」が
- * 起きないため、明示的に invalidate しないと Vite が古い変換結果を
- * キャッシュから配信し続けてしまう
- */
-function invalidateVirtualCss(context: unknown, cssId: string): void {
-  const environment = (
-    context as { environment?: { moduleGraph?: ModuleGraphLike } }
-  ).environment;
-  const graph = environment?.moduleGraph;
-  if (graph === undefined) {
-    return;
-  }
-  const mod = graph.getModuleById(cssId);
-  if (mod !== undefined && mod !== null) {
-    graph.invalidateModule(mod as never);
-  }
-}
+/** 仮想 CSS モジュールの id からハッシュクエリを外し、Map のキーに揃える */
+const stripQuery = (id: string): string => id.split("?")[0] ?? id;
 
 export function bestCss(): Plugin {
   const extractedCss = new Map<string, string>();
@@ -51,42 +25,37 @@ export function bestCss(): Plugin {
     resolveId(source) {
       // 仮想 CSS モジュールはファイルシステムに存在しないため、
       // 他のリゾルバに渡さずここで解決を確定させる
-      if (extractedCss.has(source)) {
+      if (extractedCss.has(stripQuery(source))) {
         return source;
       }
       return null;
     },
 
     load(id) {
-      return extractedCss.get(id) ?? null;
+      return extractedCss.get(stripQuery(id)) ?? null;
     },
 
     transform(code, id) {
       if (!TRANSFORM_TARGET_RE.test(id) || id.includes("/node_modules/")) {
         return null;
       }
-      const cssId = id + VIRTUAL_CSS_SUFFIX;
       const result = transform(code, { filename: id });
-
       if (result === null) {
-        // css`` が全て削除されたケース。エントリを消すのではなく空にする理由:
-        // クライアントに残った古い import からのリクエストに 404 ではなく
-        // 空 CSS を返し、スタイルだけ確実に消すため
-        if (extractedCss.get(cssId)) {
-          extractedCss.set(cssId, "");
-          invalidateVirtualCss(this, cssId);
-        }
+        // css`` が全て削除された場合、新しいコードに import が残らないため
+        // Vite の HMR prune が古い style 要素を除去する。ここでの後始末は不要
         return null;
       }
 
-      const previousCss = extractedCss.get(cssId);
+      const cssId = id + VIRTUAL_CSS_SUFFIX;
       extractedCss.set(cssId, result.css);
-      if (previousCss !== undefined && previousCss !== result.css) {
-        invalidateVirtualCss(this, cssId);
-      }
 
+      // import URL に CSS の内容ハッシュを付ける理由: ブラウザは ESM モジュールを
+      // URL 単位でキャッシュするため、サーバー側の内容更新だけでは再取得されない。
+      // モジュールグラフの invalidate（?t= 方式）はグラフの内部状態に依存して
+      // 空振りし得たため、内容が変われば URL が必ず変わるこの方式にした
+      const versionedCssId = `${cssId}?hash=${generateClassName(result.css)}`;
       return {
-        code: `${result.code}\nimport ${JSON.stringify(cssId)};\n`,
+        code: `${result.code}\nimport ${JSON.stringify(versionedCssId)};\n`,
         map: null,
       };
     },

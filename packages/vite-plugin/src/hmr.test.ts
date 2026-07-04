@@ -7,7 +7,6 @@ import { bestCss } from "./index.js";
 const FIXTURE_DIR = path.resolve(import.meta.dirname, "__fixtures__");
 const ENTRY = path.join(FIXTURE_DIR, ".tmp-hmr-entry.ts");
 const ENTRY_URL = "/.tmp-hmr-entry.ts";
-const VIRTUAL_CSS_ID = `${ENTRY}.best-css.css`;
 
 // 値には色名ではなく padding を使う。Lightning CSS が色名を 16 進数へ
 // 正規化する（blue → #00f）ため、色名は出力に残る保証がない
@@ -44,6 +43,15 @@ const simulateFileChange = (dev: ViteDevServer, content: string): void => {
   graph.invalidateModule(mod);
 };
 
+/** 変換後コードから仮想 CSS モジュールの import URL を取り出すヘルパー */
+const extractCssImportUrl = (code: string | undefined): string => {
+  const match = (code ?? "").match(/import "([^"]*best-css\.css[^"]*)"/);
+  if (!match?.[1]) {
+    throw new Error(`仮想 CSS の import が見つかりません: ${code}`);
+  }
+  return match[1];
+};
+
 afterEach(async () => {
   await server?.close();
   server = undefined;
@@ -51,35 +59,48 @@ afterEach(async () => {
 });
 
 describe("dev サーバーの HMR", () => {
-  it("css`` を編集すると仮想 CSS モジュールが新しい内容で配信される", async () => {
+  it("css`` を編集すると import URL が変わり、新 URL から新しい CSS が配信される", async () => {
     // Arrange
     fs.writeFileSync(ENTRY, sourceWithPadding("1px"));
     const dev = await startServer();
-    await dev.transformRequest(ENTRY_URL);
-    const before = await dev.transformRequest(VIRTUAL_CSS_ID);
-    expect(before?.code).toContain("1px");
+    const before = await dev.transformRequest(ENTRY_URL);
+    const urlBefore = extractCssImportUrl(before?.code);
 
     // Act: ファイルを編集して再変換させる
     simulateFileChange(dev, sourceWithPadding("2px"));
-    await dev.transformRequest(ENTRY_URL);
+    const after = await dev.transformRequest(ENTRY_URL);
+    const urlAfter = extractCssImportUrl(after?.code);
 
-    // Assert: 仮想 CSS モジュールに編集が反映されている
-    const after = await dev.transformRequest(VIRTUAL_CSS_ID);
-    expect(after?.code).toContain("2px");
-    expect(after?.code).not.toContain("1px");
+    // Assert: ブラウザは ESM モジュールを URL 単位でキャッシュするため、
+    // 内容が変わったら URL 自体が変わらなければ再取得されない
+    expect(urlAfter).not.toBe(urlBefore);
+    const cssModule = await dev.transformRequest(urlAfter);
+    expect(cssModule?.code).toContain("2px");
+    expect(cssModule?.code).not.toContain("1px");
   });
 
-  it("css`` を全て削除すると古いスタイルが配信されなくなる", async () => {
+  it("同一内容での再変換では import URL が変わらない（不要な再取得をさせない）", async () => {
+    fs.writeFileSync(ENTRY, sourceWithPadding("1px"));
+    const dev = await startServer();
+    const before = await dev.transformRequest(ENTRY_URL);
+    const urlBefore = extractCssImportUrl(before?.code);
+
+    simulateFileChange(dev, sourceWithPadding("1px"));
+    const after = await dev.transformRequest(ENTRY_URL);
+    const urlAfter = extractCssImportUrl(after?.code);
+
+    expect(urlAfter).toBe(urlBefore);
+  });
+
+  it("css`` を全て削除すると CSS の import 自体がなくなる", async () => {
     fs.writeFileSync(ENTRY, sourceWithPadding("1px"));
     const dev = await startServer();
     await dev.transformRequest(ENTRY_URL);
-    await dev.transformRequest(VIRTUAL_CSS_ID);
 
     simulateFileChange(dev, SOURCE_WITHOUT_CSS);
-    await dev.transformRequest(ENTRY_URL);
+    const after = await dev.transformRequest(ENTRY_URL);
 
-    // 取り残された仮想 CSS モジュールへのリクエストにも古い CSS を返さない
-    const after = await dev.transformRequest(VIRTUAL_CSS_ID);
-    expect(after?.code ?? "").not.toContain("1px");
+    // import が消えれば Vite の HMR prune が古い style 要素を除去する
+    expect(after?.code ?? "").not.toContain("best-css.css");
   });
 });
