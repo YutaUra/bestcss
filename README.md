@@ -36,6 +36,65 @@ import "@best-css/core/reset.css";
 
 自動注入にしていないのは、reset がコンポーネントスタイルより前に読み込まれる必要があり、import 順 = カスケード順をユーザーが制御できるべきだからである。別のリセットを使いたい場合は、これを import せず好きなものを直接 import すればよい。
 
+## 書き方ガイド
+
+### css`` 内に書けるもの
+
+ネスト（`&:hover` 等）と条件付き at-rules（`@media` / `@supports` / `@container`）はそのままネストして書ける:
+
+```ts
+const card = css`
+  padding: 16px;
+
+  &:hover {
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+  }
+
+  @media (min-width: 600px) {
+    padding: 24px;
+  }
+`;
+```
+
+### グローバルな定義は通常の CSS ファイルに書く
+
+`@keyframes`・デザイントークン（`:root` のカスタムプロパティ）・要素デフォルトは、クラスにスコープできないグローバルな存在なので、通常の `.css` ファイルに書いて import する（[examples/vite-react/src/global.css](examples/vite-react/src/global.css) 参照）。`@keyframes` を css`` 内に書くとビルドエラーになる（暗黙に無視しない）。
+
+```css
+/* global.css */
+:root {
+  --brand: #2563eb;
+}
+@keyframes pulse {
+  50% { opacity: 0.5; }
+}
+```
+
+```ts
+const title = css`
+  color: var(--brand);
+  animation: pulse 2s infinite;
+`;
+```
+
+### クラス合成の注意（CSS の一般則）
+
+`` `${base} ${variant}` `` のような合成は可能だが、同一プロパティが衝突したときの勝敗は **className に並べた順ではなく、スタイルシート内でのルールの順** で決まる。ベースとバリアントで同じプロパティを両方に書かないのが安全。
+
+### テスト（Vitest）
+
+css`` はビルド時変換が前提のため、プラグインなしでテストを実行すると実行時エラーになる。Vitest は Vite ベースなので、`vitest.config.ts` に同じプラグインを並べるだけでよい:
+
+```ts
+import { bestCss } from "@best-css/vite-plugin";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  plugins: [react(), bestCss()],
+});
+```
+
 > **Status**: Phase 1（MVP）完了。Vite + React で css タグの抽出・HMR まで動作する。npm 未公開のため、試すには本リポジトリの examples を使う。進捗は [docs/plan.md](docs/plan.md) を参照。
 
 ## 試す

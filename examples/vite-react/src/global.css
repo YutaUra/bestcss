@@ -1,0 +1,14 @@
+/*
+ * グローバルな定義（デザイントークン・keyframes・要素デフォルト）は
+ * css`` ではなく通常の CSS ファイルに書く。
+ * keyframes はクラスにスコープできないため css`` 内ではエラーになる。
+ */
+:root {
+  --brand: #2563eb;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}

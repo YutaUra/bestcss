@@ -9,7 +9,8 @@ const layout = css`
 
 const title = css`
   font-size: 2rem;
-  color: royalblue;
+  color: var(--brand);
+  animation: pulse 2s ease-in-out infinite;
 `;
 
 const button = css`
