@@ -6,11 +6,12 @@ import { defineConfig } from "vite";
 
 const entry = "./app/server.ts";
 
-// minifyClassNames を無効にする理由: HonoX は client / server の 2 パス
-// ビルドで、SSR された HTML のクラス名と配信 CSS が別ビルドから出る。
-// 頻度順の短縮はビルドごとに割り当てが変わり両者の一致を壊すが、
-// 内容ハッシュ名なら独立したビルド間でも決定的に一致する
-const bestCssPlugin = () => bestCss({ minifyClassNames: false });
+// HonoX は client / server の 2 パスビルドで、SSR された HTML のクラス名と
+// 配信 CSS が別ビルドから出る。renameMapPath を共有すると、client ビルドが
+// 確定した短縮名の表を server ビルドが読んで同じ名前に書き換えるため、
+// SSR 構成でもクラス名短縮を有効にできる（build は client → server の順）
+const bestCssPlugin = () =>
+  bestCss({ renameMapPath: "dist/.best-css/rename-map.json" });
 
 export default defineConfig(({ mode }) => {
   if (mode === "client") {

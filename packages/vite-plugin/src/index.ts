@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import {
   applyRename,
   createRenameMap,
@@ -28,15 +30,62 @@ export interface BestCssOptions {
    * @default true
    */
   minifyClassNames?: boolean;
+  /**
+   * リネーム表（短縮前 → 短縮後のクラス名）を共有するファイルパス。
+   *
+   * SSR 構成では HTML（サーバービルド）と CSS（クライアントビルド）が
+   * 独立したビルドから出るため、ビルド内の頻度で決まる短縮名は一致しない。
+   * クライアントビルドが確定した表をここへ書き出し、サーバービルドが
+   * 同じ表を読んで書き換えることで短縮名を一致させる
+   * （クライアント → サーバーの順でビルドすること）
+   */
+  renameMapPath?: string;
 }
 
 export function bestCss(options: BestCssOptions = {}): Plugin {
   const minifyClassNames = options.minifyClassNames ?? true;
   const extractedCss = new Map<string, { css: string; map: string }>();
   const generatedClassNames = new Set<string>();
+  let root = process.cwd();
+  let isProduction = false;
+  let sharedRenameMap: Map<string, string> | null = null;
+
+  const resolveRenameMapPath = (): string | null =>
+    options.renameMapPath === undefined
+      ? null
+      : path.resolve(root, options.renameMapPath);
+
+  const loadSharedRenameMap = (): Map<string, string> => {
+    if (sharedRenameMap !== null) {
+      return sharedRenameMap;
+    }
+    const mapPath = resolveRenameMapPath();
+    if (mapPath === null || !fs.existsSync(mapPath)) {
+      throw new Error(
+        `best-css: リネーム表 ${mapPath} が見つかりません。` +
+          `renameMapPath はクライアントビルドが書き出すため、` +
+          `クライアントビルドを先に実行してください。`,
+      );
+    }
+    sharedRenameMap = new Map(
+      Object.entries(
+        JSON.parse(fs.readFileSync(mapPath, "utf8")) as Record<string, string>,
+      ),
+    );
+    return sharedRenameMap;
+  };
 
   return {
     name: "best-css",
+
+    configResolved(config) {
+      root = config.root;
+      // command ではなく isProduction で判定する理由: @hono/vite-ssg は
+      // ビルド中に内部のモジュールランナー（command=serve の設定）で
+      // configResolved を再度呼ぶため、command はビルド中でも serve に
+      // 上書きされ得る。isProduction はその場合も true を保つ
+      isProduction = config.isProduction;
+    },
     // enforce: "pre" にする理由: JSX 変換（@vitejs/plugin-react や esbuild）より
     // 前にユーザーが書いた元ソースを受け取り、css`` の位置情報を保つため
     enforce: "pre",
@@ -84,7 +133,16 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         this as { environment?: { config?: { consumer?: string } } }
       ).environment?.config?.consumer;
       if (consumer === "server") {
-        return { code: result.code, map: result.map };
+        let serverCode = result.code;
+        // リネーム表の適用を generateBundle ではなく変換時に行う理由:
+        // @hono/vite-ssg のように、バンドルを作らずモジュールランナーで
+        // サーバーコードを実行して HTML を書き出すツールでは
+        // generateBundle が HTML 生成経路を通らないため。
+        // dev（vite dev）は表を使わない（クライアント側も bc 名のため）
+        if (isProduction && resolveRenameMapPath() !== null) {
+          serverCode = applyRename(serverCode, loadSharedRenameMap());
+        }
+        return { code: serverCode, map: result.map };
       }
 
       // import URL に CSS の内容ハッシュを付ける理由: ブラウザは ESM モジュールを
@@ -115,7 +173,33 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           }
         }
 
-        if (!minifyClassNames || generatedClassNames.size === 0) {
+        if (!minifyClassNames) {
+          return;
+        }
+
+        const renameMapPath = resolveRenameMapPath();
+        const consumer = (
+          this as { environment?: { config?: { consumer?: string } } }
+        ).environment?.config?.consumer;
+
+        if (consumer === "server") {
+          // サーバービルドは自分の頻度で短縮しない。CSS を持つのは
+          // クライアントビルドであり、独立に計算した短縮名は一致しないため。
+          // 表があるときだけ、それに従って書き換える（transform 時に
+          // 適用済みだが、バンドル型 SSR での取りこぼしをここで拾う）
+          if (renameMapPath === null) {
+            return;
+          }
+          const sharedMap = loadSharedRenameMap();
+          for (const output of Object.values(bundle)) {
+            if (output.type === "chunk") {
+              output.code = applyRename(output.code, sharedMap);
+            }
+          }
+          return;
+        }
+
+        if (generatedClassNames.size === 0) {
           return;
         }
 
@@ -144,6 +228,20 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           } else if (fileName.endsWith(".css")) {
             output.source = applyRename(String(output.source), renameMap);
           }
+        }
+
+        // 確定した表を書き出し、後続のサーバービルドに共有する。
+        // CSS アセットを持つ環境に限定する理由: SSG 等が走らせる空の
+        // クライアント環境が、確定済みの表を上書きするのを防ぐため
+        const hasCssAsset = Object.keys(bundle).some((fileName) =>
+          fileName.endsWith(".css"),
+        );
+        if (renameMapPath !== null && hasCssAsset) {
+          fs.mkdirSync(path.dirname(renameMapPath), { recursive: true });
+          fs.writeFileSync(
+            renameMapPath,
+            JSON.stringify(Object.fromEntries(renameMap), null, 2),
+          );
         }
       },
     },

@@ -107,7 +107,13 @@ export default defineConfig({
 
 動く例: [examples/honox-mpa](examples/honox-mpa)（SSG による MPA + islands）。ポイントは 3 つ:
 
-1. **`minifyClassNames: false` にする** — SSR された HTML のクラス名と配信 CSS が別ビルド（server / client）から出るため、ビルド内の頻度で変わる短縮名は一致しない。内容ハッシュ名なら独立したビルド間でも決定的に一致する
+1. **`renameMapPath` でリネーム表を共有する** — SSR された HTML のクラス名と配信 CSS が別ビルド（server / client）から出るため、ビルド内の頻度で変わる短縮名はそのままでは一致しない。クライアントビルドが確定した表を書き出し、サーバービルドが同じ表で書き換えることで、SSR でもクラス名短縮が有効になる（ビルドはクライアント → サーバーの順。[ADR-0006](docs/decisions/0006-rename-map-sharing.md)）:
+
+```ts
+bestCss({ renameMapPath: "dist/.best-css/rename-map.json" })
+```
+
+表を共有しない場合は `minifyClassNames: false` にする（内容ハッシュ名は独立したビルド間でも決定的に一致する）
 2. **SSR ビルドに CSS import は付かない**（プラグインが自動で省く） — サーバーバンドルに必要なのはクラス名だけで、CSS の配信はクライアントビルドの責務
 3. **サーバー専用モジュールのスタイルは収集用 import が必要** — islands のスタイルは自動でクライアントビルドに入るが、ルートでしか使わないコンポーネントは `client.ts` から side-effect import して CSS を収集する:
 
