@@ -1,5 +1,5 @@
 > **Stability**: 🌀 evolving
-> **最終更新**: 2026-07-04（M1 完了）
+> **最終更新**: 2026-07-04（M2 完了）
 > **直近の変更 ADR**: なし（初版）
 
 # Plan — best-css
@@ -10,7 +10,7 @@
 
 **Phase 1: MVP — `` css`...` `` が Vite + React で動く**
 
-M1（scaffolding）完了。次は M2: css タグ抽出の変換コアの実装。
+M2（変換コア）まで完了。次は M3: Vite プラグイン統合（build）。
 
 ## MVP 定義
 
@@ -63,7 +63,7 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 | マイルストーン | 内容 | 状態 |
 |----------------|------|------|
 | M1 | monorepo scaffolding（pnpm workspace / core / vite-plugin / examples） | ✅ 完了 |
-| M2 | css タグ抽出の変換コア（Lightning CSS ベース） | ⬜ 未着手 |
+| M2 | css タグ抽出の変換コア（Lightning CSS ベース） | ✅ 完了 |
 | M3 | Vite プラグイン統合（build） | ⬜ 未着手 |
 | M4 | dev サーバー / HMR 対応 → **MVP 完了** | ⬜ 未着手 |
 | M5 | サイズ最適化の技術検証（Phase 2） | ⬜ 未着手 |

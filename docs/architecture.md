@@ -1,6 +1,6 @@
 > **Stability**: 🌊 living
-> **最終更新**: 2026-07-04
-> **直近の変更 ADR**: [ADR-0002](decisions/0002-use-lightning-css.md)
+> **最終更新**: 2026-07-04（M2 完了）
+> **直近の変更 ADR**: [ADR-0003](decisions/0003-use-oxc-parser.md)
 
 # Architecture — best-css
 
@@ -36,6 +36,8 @@ best-css/
 |------|----------|---------------------|
 | 言語 | TypeScript | エコシステム（Vite / unplugin）との親和性 |
 | CSS パース・変換 | Lightning CSS | [ADR-0002](decisions/0002-use-lightning-css.md) |
+| JS/TS パース | oxc-parser | [ADR-0003](decisions/0003-use-oxc-parser.md) |
+| コード書き換え | magic-string | span ベース部分置換で元コードとソースマップを保持 |
 | パッケージ管理 | pnpm workspace（monorepo） | core と統合層の分離。将来のパッケージ追加に対応 |
 | テスト | Vitest | Vite プロジェクトとの一貫性。TDD で開発する |
 | 対象バンドラー | Vite（まず） | charter 参照。Phase 4 で unplugin 化を検討 |
@@ -44,7 +46,10 @@ best-css/
 
 - [ADR-0001: アーキテクチャ判断記録方式の採用](decisions/0001-record-architecture-decisions.md)
 - [ADR-0002: CSS パース・変換基盤に Lightning CSS を採用](decisions/0002-use-lightning-css.md)
+- [ADR-0003: css タグ検出に oxc-parser + magic-string を採用](decisions/0003-use-oxc-parser.md)
 - core と vite-plugin の分離: 変換ロジックをバンドラー非依存に保ち、Phase 4（Next.js 等への展開）でコアを再利用できるようにする
+- クラス名は CSS 内容のみの FNV-1a ハッシュ（`bc` プレフィックス + base36）: 同一内容をファイル横断で同一クラス名に収束させ、Phase 2 の重複排除の基盤にする
+- `${}` 補間はビルドエラー: charter の「ランタイム動的スタイルはやらない」を実装レベルで強制する。動的値は CSS カスタムプロパティで表現する。`css` スタブの型（`values: never[]`）でも拒否する
 
 ## 外部依存
 
