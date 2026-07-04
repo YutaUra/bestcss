@@ -21,6 +21,8 @@ export default {
       },
       {
         test: /\.css$/,
+        // sideEffects: false 宣言下でも CSS import を保持する（css-loader の定石）
+        sideEffects: true,
         use: [MiniCssExtractPlugin.loader, "css-loader"],
       },
     ],
@@ -74,3 +76,5 @@ export default nextConfig;
 - **Turbopack ではサイズ最適化（クラス名短縮・CSS 重複排除）が使えない** — Turbopack にはアセット後処理のフック（webpack の processAssets 相当）が存在しないため。内容ハッシュ名（`bc...`、9 文字程度）のまま配信される。抽出・ゼロランタイムは動作する
 - SSR スイート（ルート単位分割・`routeCssHrefs`）は Vite 版のみ
 - ファイルパスに `!` または `?` を含むファイルは扱えない（webpack のリクエスト構文と衝突するため明示的にエラーになる）
+
+補足: `"sideEffects": false` を宣言したパッケージ内で css`` を使う場合は、上記 CSS ルールの `sideEffects: true` に加え、そのパッケージの宣言を `"sideEffects": ["**/*.css"]` にすること。

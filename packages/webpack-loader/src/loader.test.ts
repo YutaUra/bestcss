@@ -33,6 +33,9 @@ async function buildWithWebpack(): Promise<{ js: string; css: string }> {
         },
         {
           test: /\.css$/,
+          // sideEffects: false を宣言したパッケージ内でも CSS import が
+          // ツリーシェイクで落ちないようにする（css-loader の定石）
+          sideEffects: true,
           use: [MiniCssExtractPlugin.loader, "css-loader"],
         },
       ],

@@ -74,3 +74,11 @@ export default defineConfig({
 
 - 変換対象は `@bestcss/core` から `css` を import しているファイルのみ
 - 「css`` が実行時に呼ばれました」エラー = プラグイン未設定の環境でコードが実行された（素の Vitest 等）。上記のテスト設定を参照
+
+## 制限: sideEffects: false のパッケージ内で使う場合
+
+注入される CSS import は side-effect import のため、`"sideEffects": false` を宣言したパッケージ（コンポーネントライブラリ等）の中ではツリーシェイクで落とされる。CSS を side effect として明示すること:
+
+```json
+{ "sideEffects": ["**/*.css"] }
+```

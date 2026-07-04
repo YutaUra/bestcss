@@ -315,11 +315,19 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     },
 
     resolveId(source, importer) {
+      // moduleSideEffects: true を明示する理由: 注入する CSS import は
+      // side-effect import であり、"sideEffects": false を宣言した
+      // パッケージ（コンポーネントライブラリ等）の中ではツリーシェイクで
+      // 静かに落とされてしまう。利用者の設定に依存せず保持させる
+      const asSideEffect = (id: string) => ({
+        id,
+        moduleSideEffects: true as const,
+      });
       if (source === VIRTUAL_ROUTE_MANIFEST) {
         return RESOLVED_ROUTE_MANIFEST;
       }
       if (source === VIRTUAL_DEV_STYLES) {
-        return RESOLVED_DEV_STYLES;
+        return asSideEffect(RESOLVED_DEV_STYLES);
       }
       if (source.startsWith(VIRTUAL_ROUTE_PREFIX)) {
         return source;
@@ -331,7 +339,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         return null;
       }
       if (extractedCss.has(base)) {
-        return source;
+        return asSideEffect(source);
       }
       // まだ変換していないソースの仮想 CSS も、元ファイルが実在するなら
       // 解決する（load 側でオンデマンドに変換する）。相対指定は
@@ -342,7 +350,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           : base;
       const sourceFile = absolute.slice(0, -VIRTUAL_CSS_SUFFIX.length);
       if (fs.existsSync(sourceFile)) {
-        return absolute;
+        return asSideEffect(absolute);
       }
       return null;
     },
@@ -422,8 +430,10 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         return null;
       }
       // map を添えることで、css.devSourcemap 有効時に DevTools の Styles
-      // ペインから元の tsx（css`` の位置）へ辿れるようになる
-      return { code: entry.css, map: entry.map };
+      // ペインから元の tsx（css`` の位置）へ辿れるようになる。
+      // moduleSideEffects は resolveId に加えてここでも明示する
+      // （sideEffects: false 宣言下でのツリーシェイク耐性）
+      return { code: entry.css, map: entry.map, moduleSideEffects: true };
     },
 
     transform(code, id) {
