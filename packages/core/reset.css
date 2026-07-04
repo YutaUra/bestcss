@@ -1,0 +1,55 @@
+/*
+ * best-css opt-in reset。
+ * 使い方: エントリファイルで import "@best-css/core/reset.css";
+ *
+ * コンポーネントスタイルより前に読み込まれる必要があるため、
+ * プラグインによる自動注入ではなく明示的な import で opt-in する
+ * （import 順 = カスケード順をユーザーが制御できる）。
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}

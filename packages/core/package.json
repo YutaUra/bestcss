@@ -7,10 +7,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./reset.css": "./reset.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "reset.css"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

@@ -8,6 +8,10 @@ const DEDUP_FIXTURE = path.resolve(
   import.meta.dirname,
   "__fixtures__/dedup/entry.ts",
 );
+const RESET_FIXTURE = path.resolve(
+  import.meta.dirname,
+  "__fixtures__/reset/entry.ts",
+);
 
 /** fixture を vite build に通し、JS チャンクと CSS アセットを取り出すヘルパー */
 async function buildFixture(
@@ -100,6 +104,14 @@ describe("bestCss プラグイン", () => {
     });
 
     expect(css.match(/\.bc[a-z0-9]+/g)).toHaveLength(1);
+  });
+
+  it("reset.css を import で opt-in でき、コンポーネントスタイルより前に出力される", async () => {
+    const { css } = await buildFixture(RESET_FIXTURE);
+
+    expect(css).toContain("box-sizing");
+    // reset は import 順に従い、コンポーネントのルールより前に来る
+    expect(css.indexOf("box-sizing")).toBeLessThan(css.indexOf("color:"));
   });
 
   it("クラス名短縮と重複排除が両立する", async () => {

@@ -26,6 +26,16 @@ export const Button = () => <button className={button}>Click</button>;
 
 ビルドすると CSS はファイルとして分割出力され、ランタイムには何も残らない。
 
+### Reset CSS（opt-in）
+
+必要な場合のみ、エントリファイルで import する:
+
+```ts
+import "@best-css/core/reset.css";
+```
+
+自動注入にしていないのは、reset がコンポーネントスタイルより前に読み込まれる必要があり、import 順 = カスケード順をユーザーが制御できるべきだからである。
+
 > **Status**: Phase 1（MVP）完了。Vite + React で css タグの抽出・HMR まで動作する。npm 未公開のため、試すには本リポジトリの examples を使う。進捗は [docs/plan.md](docs/plan.md) を参照。
 
 ## 試す
