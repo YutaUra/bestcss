@@ -115,13 +115,22 @@ bestCss({ renameMapPath: "dist/.best-css/rename-map.json" })
 
 表を共有しない場合は `minifyClassNames: false` にする（内容ハッシュ名は独立したビルド間でも決定的に一致する）
 2. **SSR ビルドに CSS import は付かない**（プラグインが自動で省く） — サーバーバンドルに必要なのはクラス名だけで、CSS の配信はクライアントビルドの責務
-3. **サーバー専用モジュールのスタイルは収集用 import が必要** — islands のスタイルは自動でクライアントビルドに入るが、ルートでしか使わないコンポーネントは `client.ts` から side-effect import して CSS を収集する:
+3. **`routeStyles` でルート単位に CSS を分割する** — ルートの import グラフから CSS を集めたスタイルエントリをクライアントビルドに注入し、「ルート専用 CSS はそのルートだけ、共有 CSS は共有ファイル」の分割を Vite に委ねる。ルート → CSS の対応表（`.best-css/route-css.json`）を renderer が読み、ルートに応じた `<link>` を注入する（[ADR-0007](docs/decisions/0007-route-styles.md)。クライアント側の設定にのみ指定する）:
+
+```ts
+bestCss({
+  renameMapPath: "dist/.best-css/rename-map.json",
+  routeStyles: { dir: "app/routes" },
+})
+```
+
+dev では HMR のため `client.ts` から dev 限定の side-effect import で全スタイルを読み込む（本番ビルドでは消える）:
 
 ```ts
 // app/client.ts
-import { createClient } from "honox/client";
-import "./components/ui.js"; // スタイル収集
-createClient();
+if (import.meta.env.DEV) {
+  void import("./components/ui.js");
+}
 ```
 
 ### テスト（Vitest）

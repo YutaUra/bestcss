@@ -148,6 +148,17 @@ describe("bestCss プラグイン", () => {
     );
   });
 
+  it("ソースを JS として import せずとも仮想 CSS モジュールを単独でロードできる", async () => {
+    const entry = path.resolve(
+      import.meta.dirname,
+      "__fixtures__/lazy/entry.ts",
+    );
+
+    const { css } = await buildFixture(entry, { minifyClassNames: false });
+
+    expect(css).toContain("77px");
+  });
+
   it("reset.css を import で opt-in でき、コンポーネントスタイルより前に出力される", async () => {
     const { css } = await buildFixture(RESET_FIXTURE);
 
