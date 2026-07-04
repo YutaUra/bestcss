@@ -1,8 +1,27 @@
 {
   "name": "@bestcss/vite-plugin",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "bestcss の Vite プラグイン。css`` の抽出・HMR・クラス名短縮・SSR / ルート単位 CSS 分割",
+  "keywords": [
+    "css",
+    "css-in-js",
+    "zero-runtime",
+    "bestcss"
+  ],
+  "license": "MIT",
+  "author": "Yuta Ura",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YutaUra/best-css.git",
+    "directory": "packages/vite-plugin"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

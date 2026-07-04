@@ -1,8 +1,27 @@
 {
   "name": "@bestcss/webpack-loader",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "bestcss の webpack / Next.js (Turbopack) 統合。loader と最適化プラグイン",
+  "keywords": [
+    "css",
+    "css-in-js",
+    "zero-runtime",
+    "bestcss"
+  ],
+  "license": "MIT",
+  "author": "Yuta Ura",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YutaUra/best-css.git",
+    "directory": "packages/webpack-loader"
+  },
   "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

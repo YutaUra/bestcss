@@ -1,8 +1,30 @@
 {
   "name": "@bestcss/core",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
+  "description": "ゼロランタイム CSS-in-JS のバンドラー非依存な変換コア。css`` タグをビルド時にクラス名と CSS へ変換する",
+  "keywords": [
+    "css",
+    "css-in-js",
+    "zero-runtime",
+    "bestcss"
+  ],
+  "license": "MIT",
+  "author": "Yuta Ura",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YutaUra/best-css.git",
+    "directory": "packages/core"
+  },
   "type": "module",
+  "sideEffects": [
+    "*.css"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",

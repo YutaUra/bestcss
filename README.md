@@ -139,4 +139,4 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 
 ## ライセンス
 
-TBD（OSS 公開時に MIT を予定）
+[MIT](LICENSE)

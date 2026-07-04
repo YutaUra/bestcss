@@ -73,5 +73,5 @@ bestcss は以下の 5 つの価値を **全部取り** する:
 
 ## 前提と制約
 
-- ライセンス: OSS 公開を見据え MIT を予定（TBD: 公開時に確定）
+- ライセンス: MIT（[ADR-0010](decisions/0010-mit-license.md)、[LICENSE](../LICENSE)）
 - ビルド時変換が前提のため、バンドラー（まず Vite）へのプラグイン統合が必須である
