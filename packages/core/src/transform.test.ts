@@ -209,6 +209,20 @@ describe("transform", () => {
     expect(result!.css.match(/@keyframes/g)).toHaveLength(1);
   });
 
+  it("元ソースへのソースマップを返す", () => {
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const button = css\`color: red;\`;`,
+      `export const f = () => button;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result!.map).toBeDefined();
+    expect(result!.map.sources).toContain(FILENAME);
+    expect(result!.map.mappings.length).toBeGreaterThan(0);
+  });
+
   it("不正な CSS はファイル名を含むエラーで拒否する", () => {
     const code = [
       `import { css } from "@best-css/core";`,

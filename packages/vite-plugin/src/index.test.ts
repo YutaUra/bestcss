@@ -16,8 +16,12 @@ const RESET_FIXTURE = path.resolve(
 /** fixture を vite build に通し、JS チャンクと CSS アセットを取り出すヘルパー */
 async function buildFixture(
   entry: string = FIXTURE,
-  options: { cssMinify?: boolean; minifyClassNames?: boolean } = {},
-): Promise<{ js: string; css: string }> {
+  options: {
+    cssMinify?: boolean;
+    minifyClassNames?: boolean;
+    sourcemap?: boolean;
+  } = {},
+): Promise<{ js: string; css: string; map: unknown }> {
   const result = await build({
     configFile: false,
     logLevel: "silent",
@@ -25,6 +29,7 @@ async function buildFixture(
     build: {
       write: false,
       cssMinify: options.cssMinify ?? true,
+      sourcemap: options.sourcemap ?? false,
       lib: {
         entry,
         formats: ["es"],
@@ -46,7 +51,7 @@ async function buildFixture(
   if (cssAsset?.type !== "asset") {
     throw new Error("CSS アセットが出力されていません");
   }
-  return { js: chunk.code, css: String(cssAsset.source) };
+  return { js: chunk.code, css: String(cssAsset.source), map: chunk.map };
 }
 
 describe("bestCss プラグイン", () => {
@@ -104,6 +109,15 @@ describe("bestCss プラグイン", () => {
     });
 
     expect(css.match(/\.bc[a-z0-9]+/g)).toHaveLength(1);
+  });
+
+  it("sourcemap 有効時、ソースマップが変換前の元ソースまで連鎖する", async () => {
+    const { map } = await buildFixture(FIXTURE, { sourcemap: true });
+
+    expect(map).toBeTruthy();
+    // sourcesContent が css`` を含む = 変換前のソースを指せている。
+    // プラグインが map を返さないと、変換後コードがソース扱いになる
+    expect(JSON.stringify(map)).toContain("css`");
   });
 
   it("reset.css を import で opt-in でき、コンポーネントスタイルより前に出力される", async () => {

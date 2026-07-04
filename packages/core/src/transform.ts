@@ -1,5 +1,5 @@
 import { transform as transformCss } from "lightningcss";
-import MagicString from "magic-string";
+import MagicString, { type SourceMap } from "magic-string";
 import { parseSync } from "oxc-parser";
 import { generateClassName } from "./class-name.js";
 import { extractKeyframes, rewriteAnimationNames } from "./keyframes.js";
@@ -18,6 +18,8 @@ export interface TransformResult {
   css: string;
   /** このファイルから生成したクラス名（ビルド時の短縮リネームの対象特定に使う） */
   classNames: string[];
+  /** 変換後コードから元ソースへのソースマップ */
+  map: SourceMap;
 }
 
 // oxc-parser の AST 型を最小限の構造型で扱う。
@@ -188,5 +190,13 @@ export function transform(
     );
   }
 
-  return { code: ms.toString(), css: cssOutput, classNames };
+  return {
+    code: ms.toString(),
+    css: cssOutput,
+    classNames,
+    // hires: "boundary" は行内のトークン境界単位でマッピングを出す。
+    // 置換箇所（css`` → 文字列リテラル）以外の行内位置も正確に保ち、
+    // ブレークポイントやスタックトレースのずれを防ぐため
+    map: ms.generateMap({ source: options.filename, hires: "boundary" }),
+  };
 }

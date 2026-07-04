@@ -160,7 +160,7 @@ pnpm --filter example-vite-react dev       # サンプルアプリを起動
 1. ~~スコープ付き @keyframes~~ — 2026-07-04 解消（css`` 内に書けるようになった）
 2. **Vite 以外のビルド環境対応** — Phase 4 として計画済み（[docs/plan.md](docs/plan.md)）
 3. **エディタ支援の検証** — 既存拡張で css`` のハイライト・補完が効くかの確認と案内
-4. **ソースマップ** — 表外だが、transform が sourcemap を返しておらず dev のデバッグ体験に影響する（既知の不足）
+4. ~~ソースマップ~~ — 2026-07-04 解消（変換後コードから元 tsx への sourcemap を返す）
 
 ## ドキュメント
 

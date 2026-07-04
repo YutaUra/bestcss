@@ -76,9 +76,11 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       // モジュールグラフの invalidate（?t= 方式）はグラフの内部状態に依存して
       // 空振りし得たため、内容が変われば URL が必ず変わるこの方式にした
       const versionedCssId = `${cssId}?hash=${generateClassName(result.css)}`;
+      // import 行は map 生成後の末尾追記だが、行の追加は既存行の
+      // マッピングをずらさないためソースマップはそのまま有効
       return {
         code: `${result.code}\nimport ${JSON.stringify(versionedCssId)};\n`,
-        map: null,
+        map: result.map,
       };
     },
 
