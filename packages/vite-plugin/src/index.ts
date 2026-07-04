@@ -17,28 +17,28 @@ const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
  * .css で終わる id にしておくことで、Vite 自身の CSS パイプライン
  * （postcss / minify / コード分割）にそのまま処理を委ねられる
  */
-const VIRTUAL_CSS_SUFFIX = ".best-css.css";
+const VIRTUAL_CSS_SUFFIX = ".bestcss.css";
 
 /**
  * ルート単位のスタイル収集エントリ（仮想モジュール）の接頭辞。
  * ルートファイルの import グラフ上の css`` を side-effect import として
  * 集めた「スタイルだけのエントリ」を表す
  */
-const VIRTUAL_ROUTE_PREFIX = "\0best-css-route:";
+const VIRTUAL_ROUTE_PREFIX = "\0bestcss-route:";
 
 /** ルート → CSS ファイル一覧の対応表（ビルド時にインラインされる） */
-const VIRTUAL_ROUTE_MANIFEST = "virtual:best-css/route-css";
-const RESOLVED_ROUTE_MANIFEST = "\0virtual:best-css/route-css";
+const VIRTUAL_ROUTE_MANIFEST = "virtual:bestcss/route-css";
+const RESOLVED_ROUTE_MANIFEST = "\0virtual:bestcss/route-css";
 
 /** dev で全ルートのスタイルを HMR 付きで読み込むための仮想モジュール */
-const VIRTUAL_DEV_STYLES = "virtual:best-css/dev-styles";
-const RESOLVED_DEV_STYLES = "\0virtual:best-css/dev-styles";
+const VIRTUAL_DEV_STYLES = "virtual:bestcss/dev-styles";
+const RESOLVED_DEV_STYLES = "\0virtual:bestcss/dev-styles";
 
 /**
  * client / server ビルド間で共有する中間生成物の置き場所（root 相対）。
  * node_modules 配下にするのは、VCS に入らず outDir 設定にも依存しないため
  */
-const SHARE_DIR = "node_modules/.best-css";
+const SHARE_DIR = "node_modules/.bestcss";
 
 /** 仮想 CSS モジュールの id からハッシュクエリを外し、Map のキーに揃える */
 const stripQuery = (id: string): string => id.split("?")[0] ?? id;
@@ -119,7 +119,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     const mapPath = renameMapPath();
     if (mapPath === null || !fs.existsSync(mapPath)) {
       throw new Error(
-        `best-css: リネーム表 ${mapPath} が見つかりません。` +
+        `bestcss: リネーム表 ${mapPath} が見つかりません。` +
           `表はクライアントビルドが書き出すため、` +
           `クライアントビルドを先に実行してください。`,
       );
@@ -245,7 +245,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
   };
 
   return {
-    name: "best-css",
+    name: "bestcss",
     // enforce: "pre" にする理由: JSX 変換（@vitejs/plugin-react や esbuild）より
     // 前にユーザーが書いた元ソースを受け取り、css`` の位置情報を保つため
     enforce: "pre",
@@ -309,7 +309,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         this.emitFile({
           type: "chunk",
           id: VIRTUAL_ROUTE_PREFIX + routeFile,
-          name: `best-css-route/${routeKey}`,
+          name: `bestcss-route/${routeKey}`,
         });
       }
     },

@@ -10,8 +10,8 @@ const ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 const VARIANTS = [
   {
-    name: "best-css",
-    entry: "src/best-css/page.ts",
+    name: "bestcss",
+    entry: "src/bestcss/page.ts",
     plugins: () => [bestCss()],
   },
   {

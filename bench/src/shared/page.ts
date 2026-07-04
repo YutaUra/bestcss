@@ -1,5 +1,5 @@
 /**
- * 3 システム（best-css / tailwind / CSS Modules)で完全に同一の UI を
+ * 3 システム（bestcss / tailwind / CSS Modules)で完全に同一の UI を
  * レンダリングするための共通インターフェース。
  * スタイリング手法の違いだけを比較するため、DOM 構造はここで固定する。
  */
@@ -51,7 +51,7 @@ export function renderPage(ui: Ui): string {
 
   const form = ui.stackV([
     ui.heading(2, "新規プロジェクト"),
-    ui.input("name", "プロジェクト名", "例: best-css"),
+    ui.input("name", "プロジェクト名", "例: bestcss"),
     ui.input("owner", "オーナー", "例: yutaura"),
     ui.input("deadline", "期限", "YYYY-MM-DD"),
     ui.alert("info", "作成後にメンバーを招待できます。"),

@@ -12,10 +12,10 @@ charter の「自然なファイル分割」は、SPA では Vite の CSS コー
 
 プラグインに `routeStyles: { dir }` オプションを追加する。
 
-1. **仮想 CSS モジュールの遅延ロード化**: ソースを JS として import しなくても `<file>.best-css.css` を単独ロード可能にする（fs 読み込み + オンデマンド変換）
+1. **仮想 CSS モジュールの遅延ロード化**: ソースを JS として import しなくても `<file>.bestcss.css` を単独ロード可能にする（fs 読み込み + オンデマンド変換）
 2. **ルートごとの仮想スタイルエントリ**: ルートファイルの import グラフを静的に辿り（oxc で import 指定子を抽出、解決は Vite の resolver）、css`` を含むファイルの仮想 CSS を side-effect import するだけのエントリを client ビルドに注入する
 3. **分割判断は Vite に委ねる**: 複数エントリから参照される共有 CSS は共有チャンクへ、ルート専用はルートのファイルへ、という判断は Vite のチャンク分割がそのまま行う
-4. **ルート → CSS の対応表**（`.best-css/route-css.json`）を出力し、SSR の renderer がルートに応じた `<link>` を注入する（Vite の ssrManifest と同型の発想）
+4. **ルート → CSS の対応表**（`.bestcss/route-css.json`）を出力し、SSR の renderer がルートに応じた `<link>` を注入する（Vite の ssrManifest と同型の発想）
 
 `routeStyles` はクライアント側の設定にのみ指定する（CSS の出力はクライアントビルドの責務）。
 

@@ -1,6 +1,6 @@
 /*
  * preflight（リセット CSS）は含めない。
- * best-css / CSS Modules 側もリセットを持たないため、
+ * bestcss / CSS Modules 側もリセットを持たないため、
  * スタイリング手法そのものの出力サイズだけを比較する
  */
 @import "tailwindcss/theme.css" layer(theme);

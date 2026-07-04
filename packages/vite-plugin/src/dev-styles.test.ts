@@ -28,22 +28,22 @@ const startServer = async (): Promise<ViteDevServer> => {
   return server;
 };
 
-describe("virtual:best-css/dev-styles", () => {
+describe("virtual:bestcss/dev-styles", () => {
   it("dev では全ルートのスタイルの import を生成する", async () => {
     const dev = await startServer();
 
-    const result = await dev.transformRequest("virtual:best-css/dev-styles");
+    const result = await dev.transformRequest("virtual:bestcss/dev-styles");
 
     // ルート（index / admin）と共有モジュールのスタイルが集まる
-    expect(result?.code).toContain("routes/index.ts.best-css.css");
-    expect(result?.code).toContain("routes/admin/index.ts.best-css.css");
-    expect(result?.code).toContain("shared.ts.best-css.css");
+    expect(result?.code).toContain("routes/index.ts.bestcss.css");
+    expect(result?.code).toContain("routes/admin/index.ts.bestcss.css");
+    expect(result?.code).toContain("shared.ts.bestcss.css");
   });
 
   it("本番ビルドでは空になる（ルート単位のスタイルエントリに置き換わる）", async () => {
     fs.writeFileSync(
       TMP_ENTRY,
-      `import "virtual:best-css/dev-styles";\nexport const entry = 1;\n`,
+      `import "virtual:bestcss/dev-styles";\nexport const entry = 1;\n`,
     );
 
     const result = await build({
@@ -62,13 +62,13 @@ describe("virtual:best-css/dev-styles", () => {
     const chunk = outputs.find((o) => o.type === "chunk");
 
     expect(chunk?.type === "chunk" && chunk.code).not.toContain(
-      "best-css.css",
+      "bestcss.css",
     );
   });
 
   it("dev-styles 経由の仮想 CSS は元ファイルの編集が反映される", async () => {
     const dev = await startServer();
-    const cssId = path.join(ROOT, "routes/index.ts") + ".best-css.css";
+    const cssId = path.join(ROOT, "routes/index.ts") + ".bestcss.css";
     const before = await dev.transformRequest(cssId);
     expect(before?.code).toContain("101px");
 

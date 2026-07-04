@@ -1,4 +1,4 @@
-# best-css
+# bestcss
 
 ゼロランタイム × コロケーション × 生 CSS 文法 × サイズ最適化を「全部取り」する CSS ライブラリ。
 
@@ -6,7 +6,7 @@
 
 既存の CSS ライブラリはそれぞれ何かを犠牲にしている。tailwindcss はゼロランタイムと引き換えに HTML の class を肥大させ、styled-components はコロケーションと引き換えにランタイムコストを払い、vanilla-extract / panda-css はゼロランタイムと引き換えに生 CSS 文法を捨て、CSS Modules はファイル分割と引き換えにファイル往復を強いる。
 
-best-css は、JSX 内に書いた生 CSS をビルド時に抽出・変換することで、これらのトレードオフを同時に解消することを目指す。詳細な思想は [docs/charter.md](docs/charter.md) を参照。
+bestcss は、JSX 内に書いた生 CSS をビルド時に抽出・変換することで、これらのトレードオフを同時に解消することを目指す。詳細な思想は [docs/charter.md](docs/charter.md) を参照。
 
 ## 書き味
 
@@ -36,122 +36,32 @@ import "@bestcss/core/reset.css";
 
 自動注入にしていないのは、reset がコンポーネントスタイルより前に読み込まれる必要があり、import 順 = カスケード順をユーザーが制御できるべきだからである。別のリセットを使いたい場合は、これを import せず好きなものを直接 import すればよい。
 
-## 書き方ガイド
+## 使い方ドキュメント
 
-### css`` 内に書けるもの
+使い方の正典は **各パッケージに同梱されたドキュメント** で、インストールしたバージョンと常に一致する:
 
-ネスト（`&:hover` 等）と条件付き at-rules（`@media` / `@supports` / `@container`）はそのままネストして書ける:
+- [@bestcss/core/docs](packages/core/docs/index.md) — css`` の文法・内部のしくみ・reset
+- [@bestcss/vite-plugin/docs](packages/vite-plugin/docs/index.md) — セットアップ・オプション・SSR / MPA 統合・Vitest
+- [@bestcss/webpack-loader/docs](packages/webpack-loader/docs/index.md) — webpack / Next.js（Turbopack）
 
-```ts
-const card = css`
-  padding: 16px;
+## AI エージェントと使う
 
-  &:hover {
-    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
-  }
+Next.js と同じパターンで、バージョン一致のドキュメントを node_modules 内に同梱している。プロジェクトルートの `AGENTS.md` に以下を追加すると、エージェントが学習データではなく同梱ドキュメントを参照する:
 
-  @media (min-width: 600px) {
-    padding: 24px;
-  }
-`;
+```md
+<!-- BEGIN:bestcss-agent-rules -->
+
+# bestcss: コードを書く前に必ず同梱ドキュメントを読むこと
+
+bestcss に関する作業の前に、`node_modules/@bestcss/core/docs/`（文法・しくみ）と、
+使用しているバンドラー統合のドキュメント（`node_modules/@bestcss/vite-plugin/docs/`
+または `node_modules/@bestcss/webpack-loader/docs/`）の該当ページを読むこと。
+学習データは古い — 同梱ドキュメントが正である。
+
+<!-- END:bestcss-agent-rules -->
 ```
 
-### @keyframes はスコープ付きで書ける
-
-css`` のブロック直下に書いた `@keyframes` は、クラス名と同様に内容ハッシュで命名し直され、名前の衝突が起きない。参照（`animation` / `animation-name`）は同一ファイル内のブロック間で解決される:
-
-```ts
-const title = css`
-  animation: pulse 2s infinite;
-
-  @keyframes pulse {
-    50% { opacity: 0.5; }
-  }
-`;
-```
-
-### グローバルな定義は通常の CSS ファイルに書く
-
-デザイントークン（`:root` のカスタムプロパティ）や要素デフォルトは、クラスにスコープできないグローバルな存在なので、通常の `.css` ファイルに書いて import する（[examples/vite-react/src/global.css](examples/vite-react/src/global.css) 参照）。
-
-```css
-/* global.css */
-:root {
-  --brand: #2563eb;
-}
-```
-
-```ts
-const title = css`
-  color: var(--brand);
-`;
-```
-
-### クラス合成の注意（CSS の一般則）
-
-`` `${base} ${variant}` `` のような合成は可能だが、同一プロパティが衝突したときの勝敗は **className に並べた順ではなく、スタイルシート内でのルールの順** で決まる。ベースとバリアントで同じプロパティを両方に書かないのが安全。
-
-### DevTools からスタイルの定義元へ辿る
-
-Vite の `css.devSourcemap` を有効にすると、dev サーバーで DevTools の Styles ペインのソースリンクが css`` を書いた tsx の位置を指すようになる（無効時もリンク名 `App.tsx.best-css.css` からファイルまでは特定できる）:
-
-```ts
-// vite.config.ts
-export default defineConfig({
-  plugins: [react(), bestCss()],
-  css: { devSourcemap: true },
-});
-```
-
-### SSR / islands フレームワークとの統合（HonoX）
-
-動く例: [examples/honox-mpa](examples/honox-mpa)（SSG による MPA + islands）。設定は `ssr` オプションひとつで、**client / server どちらのビルド設定にも同じ値を渡せばよい**:
-
-```ts
-// vite.config.ts（client / server 共通）
-bestCss({ ssr: { routesDir: "app/routes" } })
-// ルート単位の分割が不要なら bestCss({ ssr: true })
-```
-
-これだけで内部的に次が有効になる:
-
-- **クラス名短縮のリネーム表をビルド間で自動共有**（[ADR-0006](docs/decisions/0006-rename-map-sharing.md)） — SSR された HTML と配信 CSS の短縮名が一致する。ビルドは client → server の順（違反は明示的なエラーで検出）
-- **SSR ビルドに CSS import を付与しない** — サーバーバンドルに必要なのはクラス名だけで、CSS の配信はクライアントビルドの責務
-- **ルート単位の CSS 分割**（`routesDir` 指定時、[ADR-0007](docs/decisions/0007-route-styles.md)） — ルート専用 CSS（例: `/admin` だけのスタイル）はそのルートにのみ、共有 CSS は共有ファイルとして配信される
-
-renderer には `routeCssHrefs` でルートに応じた `<link>` を注入する（対応表はビルド時にインラインされるため、実行時のファイルアクセスは不要。serverless でも動く）:
-
-```tsx
-// app/routes/_renderer.tsx
-import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
-
-{routeCssHrefs(c.req.path).map((href) => (
-  <link href={href} rel="stylesheet" />
-))}
-```
-
-dev のスタイルは仮想モジュールを 1 行 import するだけ（全ルートのスタイルを HMR 付きで収集。本番ビルドでは空になる）:
-
-```ts
-// app/client.ts
-import "virtual:best-css/dev-styles";
-```
-
-仮想モジュールの型は tsconfig に追加する: `"types": ["vite/client", "@bestcss/vite-plugin/client"]`
-
-### テスト（Vitest）
-
-css`` はビルド時変換が前提のため、プラグインなしでテストを実行すると実行時エラーになる。Vitest は Vite ベースなので、`vitest.config.ts` に同じプラグインを並べるだけでよい:
-
-```ts
-import { bestCss } from "@bestcss/vite-plugin";
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
-
-export default defineConfig({
-  plugins: [react(), bestCss()],
-});
-```
+`BEGIN` / `END` マーカーの外側には自由にプロジェクト固有の指示を書いてよい。Claude Code の場合は `CLAUDE.md` に `@AGENTS.md` と書けば同じ指示が読み込まれる。
 
 > **Status**: Phase 1（MVP）完了。Vite + React で css タグの抽出・HMR まで動作する。npm 未公開のため、試すには本リポジトリの examples を使う。進捗は [docs/plan.md](docs/plan.md) を参照。
 
@@ -181,9 +91,9 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 
 > 最終更新: 2026-07-04。各ライブラリの進化で古くなり得るスナップショットである。
 >
-> 凡例: ✅ 対応 / 🟡 部分的・工夫すれば可能 / ❌ 未対応（best-css 列では解消候補の不足） / ➖ 意図的に対象外（[charter](docs/charter.md) 参照）
+> 凡例: ✅ 対応 / 🟡 部分的・工夫すれば可能 / ❌ 未対応（bestcss 列では解消候補の不足） / ➖ 意図的に対象外（[charter](docs/charter.md) 参照）
 
-| 観点 | best-css | Linaria | styled-components | vanilla-extract | panda-css | tailwindcss | UnoCSS | CSS Modules |
+| 観点 | bestcss | Linaria | styled-components | vanilla-extract | panda-css | tailwindcss | UnoCSS | CSS Modules |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
 | ゼロランタイム | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | コロケーション | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |

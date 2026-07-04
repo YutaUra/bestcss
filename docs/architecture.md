@@ -2,7 +2,7 @@
 > **最終更新**: 2026-07-04（M2 完了）
 > **直近の変更 ADR**: [ADR-0003](decisions/0003-use-oxc-parser.md)
 
-# Architecture — best-css
+# Architecture — bestcss
 
 このプロジェクトの技術構成と設計判断。実装に追従して自由に更新する。重要な設計判断は `decisions/` に ADR として記録する。
 
@@ -11,7 +11,7 @@
 TypeScript 製の pnpm monorepo。「変換コア」と「バンドラー統合」を分離し、将来の Vite 以外への展開に備える。
 
 ```
-best-css/
+bestcss/
 ├── packages/
 │   ├── core/          # 変換コア: css タグの抽出・クラス名生成・CSS 出力（バンドラー非依存）
 │   └── vite-plugin/   # Vite 統合: core を Vite のモジュールグラフに接続する

@@ -7,10 +7,10 @@ import { bestCss, type BestCssOptions } from "./index.js";
 const FIXTURE_ROOT = path.resolve(import.meta.dirname, "__fixtures__");
 const FIXTURE = path.join(FIXTURE_ROOT, "basic.ts");
 const PLAIN_FIXTURE = path.join(FIXTURE_ROOT, "plain.ts");
-// ssr オプションのリネーム表は root/node_modules/.best-css に書き出される
+// ssr オプションのリネーム表は root/node_modules/.bestcss に書き出される
 const MAP_PATH = path.join(
   FIXTURE_ROOT,
-  "node_modules/.best-css/rename-map.json",
+  "node_modules/.bestcss/rename-map.json",
 );
 
 async function buildWith(options: {

@@ -7,7 +7,7 @@ import { bestCss } from "./index.js";
 const ROOT = path.resolve(import.meta.dirname, "__fixtures__/route-styles");
 const MANIFEST_PATH = path.join(
   ROOT,
-  "node_modules/.best-css/route-css.json",
+  "node_modules/.bestcss/route-css.json",
 );
 
 afterEach(() => {
@@ -111,6 +111,6 @@ describe("routeStyles: ルート単位の CSS 分割", () => {
   it("スタイル収集用の仮想エントリの JS チャンクは出力に残らない", async () => {
     const { jsChunkNames } = await buildRouteStyles();
 
-    expect(jsChunkNames.some((n) => n.includes("best-css-route"))).toBe(false);
+    expect(jsChunkNames.some((n) => n.includes("bestcss-route"))).toBe(false);
   });
 });

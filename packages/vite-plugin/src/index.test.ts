@@ -55,10 +55,10 @@ async function buildFixture(
 }
 
 describe("bestCss プラグイン", () => {
-  it("Vite が識別できるプラグイン名 best-css を持つ", () => {
+  it("Vite が識別できるプラグイン名 bestcss を持つ", () => {
     const plugin = bestCss();
 
-    expect(plugin.name).toBe("best-css");
+    expect(plugin.name).toBe("bestcss");
   });
 
   it("vite build で css`` がクラス名に置換され、CSS がアセットとして出力される", async () => {
@@ -144,7 +144,7 @@ describe("bestCss プラグイン", () => {
     expect(chunk?.type === "chunk" && chunk.code).toMatch(/"bc[a-z0-9]+"/);
     // CSS の side-effect import はサーバーバンドルに残さない
     expect(chunk?.type === "chunk" && chunk.code).not.toContain(
-      "best-css.css",
+      "bestcss.css",
     );
   });
 

@@ -45,7 +45,7 @@ const simulateFileChange = (dev: ViteDevServer, content: string): void => {
 
 /** 変換後コードから仮想 CSS モジュールの import URL を取り出すヘルパー */
 const extractCssImportUrl = (code: string | undefined): string => {
-  const match = (code ?? "").match(/import "([^"]*best-css\.css[^"]*)"/);
+  const match = (code ?? "").match(/import "([^"]*bestcss\.css[^"]*)"/);
   if (!match?.[1]) {
     throw new Error(`仮想 CSS の import が見つかりません: ${code}`);
   }
@@ -101,6 +101,6 @@ describe("dev サーバーの HMR", () => {
     const after = await dev.transformRequest(ENTRY_URL);
 
     // import が消えれば Vite の HMR prune が古い style 要素を除去する
-    expect(after?.code ?? "").not.toContain("best-css.css");
+    expect(after?.code ?? "").not.toContain("bestcss.css");
   });
 });

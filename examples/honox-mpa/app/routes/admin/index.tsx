@@ -10,6 +10,6 @@ export default createRoute((c) => {
         <p>この枠のスタイルは admin ルートの CSS にだけ含まれる。</p>
       </AdminPanel>
     </Layout>,
-    { title: "Admin | best-css × HonoX" },
+    { title: "Admin | bestcss × HonoX" },
   );
 });

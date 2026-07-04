@@ -1,14 +1,14 @@
 > **Stability**: 🪨 stable
-> **最終更新**: 2026-07-04
-> **直近の変更 ADR**: [ADR-0005](decisions/0005-drop-styled-components-api.md)（styled API をスコープ外に変更）
+> **最終更新**: 2026-07-05
+> **直近の変更 ADR**: [ADR-0009](decisions/0009-name-bestcss.md)（プロジェクト名を bestcss に統一）
 
-# Charter — best-css
+# Charter — bestcss
 
 このプロジェクトのアイデンティティを定義する文書。**変更には ADR が必須**。
 
 ## 存在意義 (Why)
 
-best-css は、既存の CSS ライブラリが抱えるトレードオフを **同時に** 解消することを目指す CSS ライブラリである。panda-css / tailwindcss / unocss / vanilla-extract / CSS Modules / styled-components の代替を狙う。
+bestcss は、既存の CSS ライブラリが抱えるトレードオフを **同時に** 解消することを目指す CSS ライブラリである。panda-css / tailwindcss / unocss / vanilla-extract / CSS Modules / styled-components の代替を狙う。
 
 既存ライブラリはそれぞれ何かを犠牲にしている:
 
@@ -19,7 +19,7 @@ best-css は、既存の CSS ライブラリが抱えるトレードオフを **
 | vanilla-extract / panda-css | ゼロランタイム・型安全 | 生 CSS 文法（TS オブジェクト記法） |
 | CSS Modules | ファイル分割・生 CSS 文法 | コロケーション（ファイル往復が発生） |
 
-best-css は以下の 5 つの価値を **全部取り** する:
+bestcss は以下の 5 つの価値を **全部取り** する:
 
 1. **当たり前にゼロランタイム** — 実行時に CSS を生成するコードを一切出荷しない
 2. **HTML / CSS 両方のサイズ最適化** — tailwind のような class name の肥大を防ぎつつ、CSS の重複も排除する
@@ -44,7 +44,7 @@ best-css は以下の 5 つの価値を **全部取り** する:
 - **UI コンポーネント集**: Chakra UI / MUI のような完成済みコンポーネントは提供しない。あくまでスタイリング基盤に徹する
 - **ランタイム動的スタイル**: props の値から実行時に CSS を生成する機能は持たない（CSS カスタムプロパティで代替する）。ゼロランタイムを崩す機能は一切入れない
 - **独自プリプロセッサ構文**: Sass 的な独自拡張構文（mixin・関数など）は追加しない。生 CSS（＋ネスト等の標準仕様）に準拠し続ける
-- **コンポーネント生成 API**（`` styled.div`...` `` 風）: best-css の責務は「CSS → クラス名」に限定する。コンポーネント抽象はユーザーランドに任せる（[ADR-0005](decisions/0005-drop-styled-components-api.md)）
+- **コンポーネント生成 API**（`` styled.div`...` `` 風）: bestcss の責務は「CSS → クラス名」に限定する。コンポーネント抽象はユーザーランドに任せる（[ADR-0005](decisions/0005-drop-styled-components-api.md)）
 
 ## 将来のスコープ拡張余地
 

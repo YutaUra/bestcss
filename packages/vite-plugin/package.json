@@ -18,7 +18,8 @@
   },
   "files": [
     "dist",
-    "client.d.ts"
+    "client.d.ts",
+    "docs"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

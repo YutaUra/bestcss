@@ -7,7 +7,7 @@ interface LoaderContext {
 /**
  * 元ファイル（css`` を含む tsx 等）を受け取り、抽出した CSS テキストを
  * 返す loader。メイン loader が発行する matchResource import
- * （`<file>.best-css.css!=!@bestcss/webpack-loader/css!<file>`）から使われる
+ * （`<file>.bestcss.css!=!@bestcss/webpack-loader/css!<file>`）から使われる
  */
 export default function bestCssCssLoader(
   this: LoaderContext,

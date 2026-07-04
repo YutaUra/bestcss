@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 async function buildWithWebpack(): Promise<{ js: string; css: string }> {
-  outDir = fs.mkdtempSync(path.join(os.tmpdir(), "best-css-webpack-"));
+  outDir = fs.mkdtempSync(path.join(os.tmpdir(), "bestcss-webpack-"));
   const compiler = webpack({
     mode: "production",
     context: FIXTURE_DIR,

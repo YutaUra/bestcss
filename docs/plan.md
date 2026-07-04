@@ -2,7 +2,7 @@
 > **最終更新**: 2026-07-05（SSR 対応スイート完了を反映）
 > **直近の変更 ADR**: [ADR-0006](decisions/0006-rename-map-sharing.md) / [ADR-0007](decisions/0007-route-styles.md)
 
-# Plan — best-css
+# Plan — bestcss
 
 このプロジェクトの段階的な計画。フェーズの進行や見直しに応じて更新される。
 
@@ -46,9 +46,9 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 - [x] tailwind 方式（アトミック class 列挙）と比較して HTML サイズが小さいことをベンチマークで示す（class 属性 3,589 bytes vs tailwind 8,985 bytes）
 - [x] 既存手法との HTML + CSS 合計サイズ比較レポートがある（[bench/RESULTS.md](../bench/RESULTS.md)）
 
-**技術検証メモ（2026-07-04）**: Vite 8 の cssMinify（Lightning CSS）は「同一セレクタの重複ルール」と「隣接する同一宣言集合のセレクタリスト化」まではやる。**部分的な宣言重複の括り出し（`.a{display:flex;gap:4px}` と `.b{display:flex;gap:8px}` から `display:flex` を共有）はやらない** — ここが best-css 独自の最適化の主戦場になる。ただし括り出しはクラス併用時のカスケード順序に影響し得るため、設計判断（ADR 候補）が必要。
+**技術検証メモ（2026-07-04）**: Vite 8 の cssMinify（Lightning CSS）は「同一セレクタの重複ルール」と「隣接する同一宣言集合のセレクタリスト化」まではやる。**部分的な宣言重複の括り出し（`.a{display:flex;gap:4px}` と `.b{display:flex;gap:8px}` から `display:flex` を共有）はやらない** — ここが bestcss 独自の最適化の主戦場になる。ただし括り出しはクラス併用時のカスケード順序に影響し得るため、設計判断（ADR 候補）が必要。
 
-**ベンチマーク結果（2026-07-04、[bench/RESULTS.md](../bench/RESULTS.md)）**: 同一ダッシュボード UI の合計 gzip で best-css 1,494 / CSS Modules 1,908 / tailwind 2,917 bytes（クラス名短縮込み。tailwind 比 51%）。宣言単位共有の伸びしろは raw 27% が理論上限だが gzip 実効はさらに小さく、クラス名短縮（ADR-0004）を優先実装した。
+**ベンチマーク結果（2026-07-04、[bench/RESULTS.md](../bench/RESULTS.md)）**: 同一ダッシュボード UI の合計 gzip で bestcss 1,494 / CSS Modules 1,908 / tailwind 2,917 bytes（クラス名短縮込み。tailwind 比 51%）。宣言単位共有の伸びしろは raw 27% が理論上限だが gzip 実効はさらに小さく、クラス名短縮（ADR-0004）を優先実装した。
 
 ### Phase 2.5: 機能ギャップの解消と SSR 対応（2026-07-04〜05 完了）
 
@@ -57,7 +57,7 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 - [x] スコープ付き @keyframes（css`` 内に書ける）
 - [x] JS / CSS ソースマップ（DevTools から css`` の元位置へ辿れる）
 - [x] MPA ビルドでの CSS 分割の契約テスト
-- [x] SSR 対応スイート: `ssr` オプションに集約（リネーム表の自動共有 [ADR-0006](decisions/0006-rename-map-sharing.md)、ルート単位 CSS 分割 [ADR-0007](decisions/0007-route-styles.md)、routeCssHrefs ヘルパー、virtual:best-css/dev-styles）
+- [x] SSR 対応スイート: `ssr` オプションに集約（リネーム表の自動共有 [ADR-0006](decisions/0006-rename-map-sharing.md)、ルート単位 CSS 分割 [ADR-0007](decisions/0007-route-styles.md)、routeCssHrefs ヘルパー、virtual:bestcss/dev-styles）
 - [x] opt-in reset（modern-normalize 委譲）
 - [x] examples 3 構成（Vite+React SPA / HonoX MPA+SSR / Storybook）
 

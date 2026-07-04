@@ -1,4 +1,4 @@
-import manifestData from "virtual:best-css/route-css";
+import manifestData from "virtual:bestcss/route-css";
 import { matchRouteCss } from "./route-css-match.js";
 
 /**
@@ -7,7 +7,7 @@ import { matchRouteCss } from "./route-css-match.js";
  * manifest（ルート → CSS ファイル一覧）は仮想モジュールとして
  * ビルド時にインラインされるため、実行時のファイルアクセスは発生しない
  * （serverless 環境でも動く）。dev では空配列を返す
- * （スタイルは virtual:best-css/dev-styles 経由で注入される）
+ * （スタイルは virtual:bestcss/dev-styles 経由で注入される）
  */
 export function routeCssHrefs(requestPath: string): string[] {
   const manifest = manifestData as Record<string, string[]> | null;

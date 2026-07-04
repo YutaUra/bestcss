@@ -41,7 +41,7 @@ describe("importStyle オプション", () => {
     const output = runLoader({});
 
     expect(output).toContain(
-      "/proj/src/Button.tsx.best-css.css!=!@bestcss/webpack-loader/css!/proj/src/Button.tsx",
+      "/proj/src/Button.tsx.bestcss.css!=!@bestcss/webpack-loader/css!/proj/src/Button.tsx",
     );
   });
 
@@ -50,7 +50,7 @@ describe("importStyle オプション", () => {
     // 実ファイル + クエリを rules（query 条件 + as: '*.css'）で CSS 化する
     const output = runLoader({ importStyle: "query" });
 
-    expect(output).toContain(`import "./Button.tsx?best-css"`);
+    expect(output).toContain(`import "./Button.tsx?bestcss"`);
     expect(output).not.toContain("!=!");
   });
 });

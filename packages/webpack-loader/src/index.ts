@@ -7,9 +7,9 @@ export interface BestCssLoaderOptions {
    *
    * - "match-resource"（デフォルト）: webpack の matchResource（`!=!`）構文で
    *   「元ファイル自身を @bestcss/webpack-loader/css で CSS として再読み込み」する
-   * - "query": 自分自身をクエリ付き（`./file.tsx?best-css`）で import する。
+   * - "query": 自分自身をクエリ付き（`./file.tsx?bestcss`）で import する。
    *   matchResource を解釈しない Turbopack 向け。利用側で
-   *   「query が best-css のとき @bestcss/webpack-loader/css を as: '*.css' で
+   *   「query が bestcss のとき @bestcss/webpack-loader/css を as: '*.css' で
    *   実行する」rule を設定する
    */
   importStyle?: "match-resource" | "query";
@@ -48,17 +48,17 @@ export default function bestCssLoader(
   // なり得るため明示的に拒否する
   if (/[!?]/.test(this.resourcePath)) {
     throw new Error(
-      `best-css: パスに "!" または "?" を含むファイルは扱えません: ${this.resourcePath}`,
+      `bestcss: パスに "!" または "?" を含むファイルは扱えません: ${this.resourcePath}`,
     );
   }
 
   const importStyle = this.getOptions?.().importStyle ?? "match-resource";
   const cssRequest =
     importStyle === "query"
-      ? `./${path.basename(this.resourcePath)}?best-css`
+      ? `./${path.basename(this.resourcePath)}?bestcss`
       : // matchResource を .css にすることで、利用側の既存 CSS ルール
         // （css-loader / mini-css-extract 等）がそのまま適用される
-        `${this.resourcePath}.best-css.css!=!@bestcss/webpack-loader/css!${this.resourcePath}`;
+        `${this.resourcePath}.bestcss.css!=!@bestcss/webpack-loader/css!${this.resourcePath}`;
   this.callback(
     null,
     `${result.code}\nimport ${JSON.stringify(cssRequest)};\n`,

@@ -22,7 +22,7 @@ async function buildWithPlugin(entryContent: string): Promise<{
   js: string;
   css: string;
 }> {
-  outDir = fs.mkdtempSync(path.join(os.tmpdir(), "best-css-wp-plugin-"));
+  outDir = fs.mkdtempSync(path.join(os.tmpdir(), "bestcss-wp-plugin-"));
   const entryFile = path.join(outDir, "entry.js");
   fs.writeFileSync(entryFile, entryContent);
 

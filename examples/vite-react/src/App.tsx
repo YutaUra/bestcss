@@ -37,7 +37,7 @@ export const App = () => {
   return (
     <main className={layout}>
       <div>
-        <h1 className={title}>best-css example</h1>
+        <h1 className={title}>bestcss example</h1>
         <button type="button" className={button}>
           Hover me
         </button>

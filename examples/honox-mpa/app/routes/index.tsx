@@ -5,10 +5,10 @@ import Counter from "../islands/counter.js";
 export default createRoute((c) => {
   return c.render(
     <Layout>
-      <Title>best-css × HonoX</Title>
+      <Title>bestcss × HonoX</Title>
       <p>サーバーレンダリングされた MPA のページ。ボタンは island。</p>
       <Counter />
     </Layout>,
-    { title: "Home | best-css × HonoX" },
+    { title: "Home | bestcss × HonoX" },
   );
 });

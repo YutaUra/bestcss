@@ -14,7 +14,7 @@ kickoff 時の思想の核は「**生 CSS に近い文法**で書けること（
 
 styled-components 風のコンポーネント生成 API は **採用しない**。charter の In Scope から削除し、Out of Scope に移す。
 
-best-css の責務は「css`` をクラス名に変換する」ことに限定する。コンポーネント抽象（クラス名をどの要素にどう当てるか）はユーザーランド（React 等のコンポーネント定義）に任せる。
+bestcss の責務は「css`` をクラス名に変換する」ことに限定する。コンポーネント抽象（クラス名をどの要素にどう当てるか）はユーザーランド（React 等のコンポーネント定義）に任せる。
 
 ## Alternatives Considered
 

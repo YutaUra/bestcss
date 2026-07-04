@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 export const metadata = {
-  title: "best-css × Next.js",
+  title: "bestcss × Next.js",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

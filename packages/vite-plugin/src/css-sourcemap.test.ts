@@ -22,7 +22,7 @@ describe("dev サーバーの CSS ソースマップ", () => {
       // Act: エントリを変換して仮想 CSS モジュールを取得する
       const entry = await server.transformRequest("/basic.ts");
       const cssUrl = entry?.code.match(
-        /import "([^"]*best-css\.css[^"]*)"/,
+        /import "([^"]*bestcss\.css[^"]*)"/,
       )?.[1];
       expect(cssUrl).toBeDefined();
       const cssModule = await server.transformRequest(cssUrl!);

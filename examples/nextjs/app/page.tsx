@@ -15,7 +15,7 @@ const title = css`
 export default function Home() {
   return (
     <main className={layout}>
-      <h1 className={title}>best-css × Next.js (Turbopack)</h1>
+      <h1 className={title}>bestcss × Next.js (Turbopack)</h1>
     </main>
   );
 }

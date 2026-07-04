@@ -117,7 +117,7 @@ export function transform(
   const parsed = parseSync(options.filename, code);
   if (parsed.errors.length > 0) {
     const detail = parsed.errors.map((e) => e.message).join("\n");
-    throw new Error(`best-css: ${options.filename} のパースに失敗しました:\n${detail}`);
+    throw new Error(`bestcss: ${options.filename} のパースに失敗しました:\n${detail}`);
   }
 
   const program = parsed.program as unknown as { body: unknown[] };
@@ -158,7 +158,7 @@ export function transform(
   for (const tag of tags) {
     if (tag.quasi.expressions.length > 0) {
       throw new Error(
-        `best-css: ${options.filename} — css\`\` 内の \${} 補間は未サポートです。` +
+        `bestcss: ${options.filename} — css\`\` 内の \${} 補間は未サポートです。` +
           `動的な値は CSS カスタムプロパティ（var(--x) + style 属性）を使ってください。`,
       );
     }
@@ -245,7 +245,7 @@ export function transform(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(
-      `best-css: ${options.filename} の CSS の解析に失敗しました: ${message}`,
+      `bestcss: ${options.filename} の CSS の解析に失敗しました: ${message}`,
     );
   }
 

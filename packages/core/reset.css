@@ -1,9 +1,9 @@
 /*
- * best-css opt-in reset。
+ * bestcss opt-in reset。
  * 使い方: エントリファイルで import "@bestcss/core/reset.css";
  *
  * 独自ルールを持たず modern-normalize に委譲する。リセットの中身は
- * ブラウザ挙動への継続的な追従が必要で、best-css の責務
+ * ブラウザ挙動への継続的な追従が必要で、bestcss の責務
  * （CSS → クラス名の変換）の外にあるため、実績あるものに任せる。
  * 別のリセットを使いたい場合は、これを import せず好きなものを
  * 直接 import すればよい。
