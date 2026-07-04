@@ -1,0 +1,22 @@
+{
+  "name": "example-honox-mpa",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --mode client && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "hono": "^4.12.27",
+    "honox": "^0.1.58"
+  },
+  "devDependencies": {
+    "@best-css/core": "workspace:*",
+    "@best-css/vite-plugin": "workspace:*",
+    "@hono/vite-ssg": "^0.3.3",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.3"
+  }
+}

@@ -103,6 +103,21 @@ export default defineConfig({
 });
 ```
 
+### SSR / islands フレームワークとの統合（HonoX）
+
+動く例: [examples/honox-mpa](examples/honox-mpa)（SSG による MPA + islands）。ポイントは 3 つ:
+
+1. **`minifyClassNames: false` にする** — SSR された HTML のクラス名と配信 CSS が別ビルド（server / client）から出るため、ビルド内の頻度で変わる短縮名は一致しない。内容ハッシュ名なら独立したビルド間でも決定的に一致する
+2. **SSR ビルドに CSS import は付かない**（プラグインが自動で省く） — サーバーバンドルに必要なのはクラス名だけで、CSS の配信はクライアントビルドの責務
+3. **サーバー専用モジュールのスタイルは収集用 import が必要** — islands のスタイルは自動でクライアントビルドに入るが、ルートでしか使わないコンポーネントは `client.ts` から side-effect import して CSS を収集する:
+
+```ts
+// app/client.ts
+import { createClient } from "honox/client";
+import "./components/ui.js"; // スタイル収集
+createClient();
+```
+
 ### テスト（Vitest）
 
 css`` はビルド時変換が前提のため、プラグインなしでテストを実行すると実行時エラーになる。Vitest は Vite ベースなので、`vitest.config.ts` に同じプラグインを並べるだけでよい:
@@ -124,7 +139,8 @@ export default defineConfig({
 ```sh
 pnpm install
 pnpm build                                 # packages/core と packages/vite-plugin をビルド
-pnpm --filter example-vite-react dev       # サンプルアプリを起動
+pnpm --filter example-vite-react dev       # SPA サンプル（React）を起動
+pnpm --filter example-honox-mpa dev        # MPA サンプル（HonoX, SSR + islands）を起動
 ```
 
 ## 特徴（目標）

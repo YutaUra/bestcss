@@ -120,6 +120,34 @@ describe("bestCss プラグイン", () => {
     expect(JSON.stringify(map)).toContain("css`");
   });
 
+  it("SSR ビルドでは CSS import を付与しない（CSS はクライアントビルドが配信する）", async () => {
+    // SSR 構成ではクラス名がクライアントビルドの CSS と一致する必要が
+    // あるため minifyClassNames: false が前提（README の SSR ガイド参照）
+    const result = await build({
+      configFile: false,
+      logLevel: "silent",
+      plugins: [bestCss({ minifyClassNames: false })],
+      build: {
+        write: false,
+        ssr: FIXTURE,
+        rollupOptions: {
+          external: ["@best-css/core"],
+        },
+      },
+    });
+    const outputs = (Array.isArray(result) ? result : [result]).flatMap(
+      (r) => (r as { output: Rollup.OutputBundle[string][] }).output,
+    );
+    const chunk = outputs.find((o) => o.type === "chunk");
+
+    // 変換自体は行われ、クラス名は SSR でレンダリングできる
+    expect(chunk?.type === "chunk" && chunk.code).toMatch(/"bc[a-z0-9]+"/);
+    // CSS の side-effect import はサーバーバンドルに残さない
+    expect(chunk?.type === "chunk" && chunk.code).not.toContain(
+      "best-css.css",
+    );
+  });
+
   it("reset.css を import で opt-in でき、コンポーネントスタイルより前に出力される", async () => {
     const { css } = await buildFixture(RESET_FIXTURE);
 

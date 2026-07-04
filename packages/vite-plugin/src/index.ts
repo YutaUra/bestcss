@@ -77,6 +77,16 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         generatedClassNames.add(className);
       }
 
+      // サーバー（SSR）向けの変換では CSS import を付与しない。
+      // SSR バンドルに必要なのはクラス名だけで、CSS の配信は
+      // クライアントビルドの責務のため（サーバーバンドルも汚さない）
+      const consumer = (
+        this as { environment?: { config?: { consumer?: string } } }
+      ).environment?.config?.consumer;
+      if (consumer === "server") {
+        return { code: result.code, map: result.map };
+      }
+
       // import URL に CSS の内容ハッシュを付ける理由: ブラウザは ESM モジュールを
       // URL 単位でキャッシュするため、サーバー側の内容更新だけでは再取得されない。
       // モジュールグラフの invalidate（?t= 方式）はグラフの内部状態に依存して
