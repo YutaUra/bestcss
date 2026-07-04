@@ -8,7 +8,7 @@
 
 best-css は、JSX 内に書いた生 CSS をビルド時に抽出・変換することで、これらのトレードオフを同時に解消することを目指す。詳細な思想は [docs/charter.md](docs/charter.md) を参照。
 
-## 目指す書き味（設計中）
+## 書き味
 
 ```tsx
 // Button.tsx — CSS はコンポーネントの隣に、生 CSS 文法で書く
@@ -26,7 +26,15 @@ export const Button = () => <button className={button}>Click</button>;
 
 ビルドすると CSS はファイルとして分割出力され、ランタイムには何も残らない。
 
-> **Note**: 現在は設計・立ち上げフェーズであり、まだ動くコードはない。進捗は [docs/plan.md](docs/plan.md) を参照。
+> **Status**: Phase 1（MVP）完了。Vite + React で css タグの抽出・HMR まで動作する。npm 未公開のため、試すには本リポジトリの examples を使う。進捗は [docs/plan.md](docs/plan.md) を参照。
+
+## 試す
+
+```sh
+pnpm install
+pnpm build                                 # packages/core と packages/vite-plugin をビルド
+pnpm --filter example-vite-react dev       # サンプルアプリを起動
+```
 
 ## 特徴（目標）
 

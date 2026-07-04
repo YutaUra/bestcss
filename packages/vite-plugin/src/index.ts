@@ -10,6 +10,35 @@ const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
  */
 const VIRTUAL_CSS_SUFFIX = ".best-css.css";
 
+// Vite の DevEnvironment が持つモジュールグラフの最小構造型。
+// vite の型に直接依存しない理由: build 時は moduleGraph が存在せず、
+// 判別を「プロパティの有無」で行うため構造型のほうが実態に合う
+interface ModuleGraphLike {
+  getModuleById(id: string): unknown;
+  invalidateModule(mod: never): void;
+}
+
+/**
+ * 仮想 CSS モジュールをモジュールグラフ上で無効化する（dev のみ）。
+ *
+ * 元の tsx が編集されても仮想 CSS モジュール自体には「ファイル変更」が
+ * 起きないため、明示的に invalidate しないと Vite が古い変換結果を
+ * キャッシュから配信し続けてしまう
+ */
+function invalidateVirtualCss(context: unknown, cssId: string): void {
+  const environment = (
+    context as { environment?: { moduleGraph?: ModuleGraphLike } }
+  ).environment;
+  const graph = environment?.moduleGraph;
+  if (graph === undefined) {
+    return;
+  }
+  const mod = graph.getModuleById(cssId);
+  if (mod !== undefined && mod !== null) {
+    graph.invalidateModule(mod as never);
+  }
+}
+
 export function bestCss(): Plugin {
   const extractedCss = new Map<string, string>();
 
@@ -36,12 +65,26 @@ export function bestCss(): Plugin {
       if (!TRANSFORM_TARGET_RE.test(id) || id.includes("/node_modules/")) {
         return null;
       }
+      const cssId = id + VIRTUAL_CSS_SUFFIX;
       const result = transform(code, { filename: id });
+
       if (result === null) {
+        // css`` が全て削除されたケース。エントリを消すのではなく空にする理由:
+        // クライアントに残った古い import からのリクエストに 404 ではなく
+        // 空 CSS を返し、スタイルだけ確実に消すため
+        if (extractedCss.get(cssId)) {
+          extractedCss.set(cssId, "");
+          invalidateVirtualCss(this, cssId);
+        }
         return null;
       }
-      const cssId = id + VIRTUAL_CSS_SUFFIX;
+
+      const previousCss = extractedCss.get(cssId);
       extractedCss.set(cssId, result.css);
+      if (previousCss !== undefined && previousCss !== result.css) {
+        invalidateVirtualCss(this, cssId);
+      }
+
       return {
         code: `${result.code}\nimport ${JSON.stringify(cssId)};\n`,
         map: null,
