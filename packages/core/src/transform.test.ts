@@ -128,6 +128,46 @@ describe("transform", () => {
     expect(result!.css).toContain(":hover");
   });
 
+  it("@media を css`` 内にネストして書ける", () => {
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`color: red; @media (min-width: 600px) { color: blue; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result!.css).toContain("@media");
+    expect(result!.css).toContain("red");
+  });
+
+  it("@supports / @container も css`` 内にネストして書ける", () => {
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`display: grid; @supports (display: flex) { display: flex; }\`;`,
+      `const b = css\`color: red; @container (min-width: 400px) { color: blue; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result!.css).toContain("@supports");
+    expect(result!.css).toContain("@container");
+  });
+
+  it("@keyframes は css`` 内に書けず、ファイル名を含むエラーになる", () => {
+    // keyframes はグローバルな存在でクラスにスコープできないため、
+    // 通常の .css ファイルに書く（README の書き方ガイド参照）。
+    // 暗黙に無視せずビルドエラーで気付けることを保証する
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`animation: spin 1s; @keyframes spin { to { transform: rotate(360deg); } }\`;`,
+    ].join("\n");
+
+    expect(() => transform(code, { filename: FILENAME })).toThrow(
+      /CSS の解析に失敗/,
+    );
+    expect(() => transform(code, { filename: FILENAME })).toThrow(FILENAME);
+  });
+
   it("不正な CSS はファイル名を含むエラーで拒否する", () => {
     const code = [
       `import { css } from "@best-css/core";`,
