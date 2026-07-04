@@ -1,9 +1,18 @@
+import fs from "node:fs";
 import path from "node:path";
 import { build } from "vite";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { bestCss } from "./index.js";
 
 const ROOT = path.resolve(import.meta.dirname, "__fixtures__/route-styles");
+const MANIFEST_PATH = path.join(
+  ROOT,
+  "node_modules/.best-css/route-css.json",
+);
+
+afterEach(() => {
+  fs.rmSync(path.join(ROOT, "node_modules"), { recursive: true, force: true });
+});
 
 interface RouteStylesBuild {
   /** ルートキー → CSS ファイル名の一覧 */
@@ -21,7 +30,7 @@ async function buildRouteStyles(): Promise<RouteStylesBuild> {
     plugins: [
       bestCss({
         minifyClassNames: false,
-        routeStyles: { dir: "routes" },
+        ssr: { routesDir: "routes" },
       }),
     ],
     build: {
@@ -46,10 +55,7 @@ async function buildRouteStyles(): Promise<RouteStylesBuild> {
       ).output,
   );
 
-  const manifestAsset = outputs.find(
-    (o) => o.type === "asset" && o.fileName.endsWith("route-css.json"),
-  );
-  if (manifestAsset === undefined) {
+  if (!fs.existsSync(MANIFEST_PATH)) {
     throw new Error("route-css.json が出力されていません");
   }
   const cssByFile = new Map(
@@ -58,7 +64,7 @@ async function buildRouteStyles(): Promise<RouteStylesBuild> {
       .map((o) => [o.fileName, String(o.source)]),
   );
   return {
-    manifest: JSON.parse(String(manifestAsset.source)) as Record<
+    manifest: JSON.parse(fs.readFileSync(MANIFEST_PATH, "utf8")) as Record<
       string,
       string[]
     >,

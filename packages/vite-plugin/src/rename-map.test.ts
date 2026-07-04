@@ -4,14 +4,13 @@ import { build, type Rollup } from "vite";
 import { afterEach, describe, expect, it } from "vitest";
 import { bestCss, type BestCssOptions } from "./index.js";
 
-const FIXTURE = path.resolve(import.meta.dirname, "__fixtures__/basic.ts");
-const PLAIN_FIXTURE = path.resolve(
-  import.meta.dirname,
-  "__fixtures__/plain.ts",
-);
-const MAP_PATH = path.resolve(
-  import.meta.dirname,
-  "__fixtures__/.tmp-rename-map.json",
+const FIXTURE_ROOT = path.resolve(import.meta.dirname, "__fixtures__");
+const FIXTURE = path.join(FIXTURE_ROOT, "basic.ts");
+const PLAIN_FIXTURE = path.join(FIXTURE_ROOT, "plain.ts");
+// ssr オプションのリネーム表は root/node_modules/.best-css に書き出される
+const MAP_PATH = path.join(
+  FIXTURE_ROOT,
+  "node_modules/.best-css/rename-map.json",
 );
 
 async function buildWith(options: {
@@ -22,6 +21,7 @@ async function buildWith(options: {
   const entry = options.entry ?? FIXTURE;
   const result = await build({
     configFile: false,
+    root: FIXTURE_ROOT,
     logLevel: "silent",
     plugins: [bestCss(options.plugin)],
     build: {
@@ -48,12 +48,15 @@ async function buildWith(options: {
 }
 
 afterEach(() => {
-  fs.rmSync(MAP_PATH, { force: true });
+  fs.rmSync(path.join(FIXTURE_ROOT, "node_modules"), {
+    recursive: true,
+    force: true,
+  });
 });
 
-describe("リネーム表の共有（SSR 構成でのクラス名短縮）", () => {
+describe("ssr オプション: リネーム表の共有", () => {
   it("クライアントビルドが確定したリネーム表を書き出す", async () => {
-    const { js } = await buildWith({ plugin: { renameMapPath: MAP_PATH } });
+    const { js } = await buildWith({ plugin: { ssr: true } });
 
     const map = JSON.parse(fs.readFileSync(MAP_PATH, "utf8")) as Record<
       string,
@@ -69,7 +72,7 @@ describe("リネーム表の共有（SSR 構成でのクラス名短縮）", () 
 
   it("サーバービルドは表を読み、クライアントと同じ短縮名を使う", async () => {
     // Arrange: クライアントビルドで表を確定させる
-    const client = await buildWith({ plugin: { renameMapPath: MAP_PATH } });
+    const client = await buildWith({ plugin: { ssr: true } });
     const map = JSON.parse(fs.readFileSync(MAP_PATH, "utf8")) as Record<
       string,
       string
@@ -77,10 +80,7 @@ describe("リネーム表の共有（SSR 構成でのクラス名短縮）", () 
     const renamed = Object.values(map)[0]!;
 
     // Act: サーバービルドが同じ表を消費する
-    const server = await buildWith({
-      ssr: true,
-      plugin: { renameMapPath: MAP_PATH },
-    });
+    const server = await buildWith({ ssr: true, plugin: { ssr: true } });
 
     // Assert: SSR コードのクラス名リテラル = クライアント CSS のクラス名
     expect(server.js).toContain(`"${renamed}"`);
@@ -90,11 +90,11 @@ describe("リネーム表の共有（SSR 構成でのクラス名短縮）", () 
 
   it("サーバービルドで表が見つからない場合は原因が分かるエラーになる", async () => {
     await expect(
-      buildWith({ ssr: true, plugin: { renameMapPath: MAP_PATH } }),
+      buildWith({ ssr: true, plugin: { ssr: true } }),
     ).rejects.toThrow(/クライアントビルド/);
   });
 
-  it("表なしのサーバービルドは短縮しない（独自の頻度で短縮すると CSS と不整合になる）", async () => {
+  it("ssr 指定なしのサーバービルドは短縮しない（独自の頻度で短縮すると CSS と不整合になる）", async () => {
     const { js } = await buildWith({ ssr: true });
 
     // デフォルト（minifyClassNames: true）でも bc ハッシュ名のまま
@@ -103,16 +103,13 @@ describe("リネーム表の共有（SSR 構成でのクラス名短縮）", () 
 
   it("CSS アセットを持たないビルドは既存の表を上書きしない", async () => {
     // css`` を含むクライアントビルドが書いた表を…
-    await buildWith({ plugin: { renameMapPath: MAP_PATH } });
+    await buildWith({ plugin: { ssr: true } });
     const before = fs.readFileSync(MAP_PATH, "utf8");
     expect(before).not.toBe("{}");
 
     // css`` を含まないビルド（SSG 等が走らせる空のクライアント環境に相当）が
     // 空の表で上書きしてはならない
-    await buildWith({
-      entry: PLAIN_FIXTURE,
-      plugin: { renameMapPath: MAP_PATH },
-    });
+    await buildWith({ entry: PLAIN_FIXTURE, plugin: { ssr: true } });
 
     expect(fs.readFileSync(MAP_PATH, "utf8")).toBe(before);
   });

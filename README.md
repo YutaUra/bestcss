@@ -105,33 +105,39 @@ export default defineConfig({
 
 ### SSR / islands フレームワークとの統合（HonoX）
 
-動く例: [examples/honox-mpa](examples/honox-mpa)（SSG による MPA + islands）。ポイントは 3 つ:
-
-1. **`renameMapPath` でリネーム表を共有する** — SSR された HTML のクラス名と配信 CSS が別ビルド（server / client）から出るため、ビルド内の頻度で変わる短縮名はそのままでは一致しない。クライアントビルドが確定した表を書き出し、サーバービルドが同じ表で書き換えることで、SSR でもクラス名短縮が有効になる（ビルドはクライアント → サーバーの順。[ADR-0006](docs/decisions/0006-rename-map-sharing.md)）:
+動く例: [examples/honox-mpa](examples/honox-mpa)（SSG による MPA + islands）。設定は `ssr` オプションひとつで、**client / server どちらのビルド設定にも同じ値を渡せばよい**:
 
 ```ts
-bestCss({ renameMapPath: "dist/.best-css/rename-map.json" })
+// vite.config.ts（client / server 共通）
+bestCss({ ssr: { routesDir: "app/routes" } })
+// ルート単位の分割が不要なら bestCss({ ssr: true })
 ```
 
-表を共有しない場合は `minifyClassNames: false` にする（内容ハッシュ名は独立したビルド間でも決定的に一致する）
-2. **SSR ビルドに CSS import は付かない**（プラグインが自動で省く） — サーバーバンドルに必要なのはクラス名だけで、CSS の配信はクライアントビルドの責務
-3. **`routeStyles` でルート単位に CSS を分割する** — ルートの import グラフから CSS を集めたスタイルエントリをクライアントビルドに注入し、「ルート専用 CSS はそのルートだけ、共有 CSS は共有ファイル」の分割を Vite に委ねる。ルート → CSS の対応表（`.best-css/route-css.json`）を renderer が読み、ルートに応じた `<link>` を注入する（[ADR-0007](docs/decisions/0007-route-styles.md)。クライアント側の設定にのみ指定する）:
+これだけで内部的に次が有効になる:
 
-```ts
-bestCss({
-  renameMapPath: "dist/.best-css/rename-map.json",
-  routeStyles: { dir: "app/routes" },
-})
+- **クラス名短縮のリネーム表をビルド間で自動共有**（[ADR-0006](docs/decisions/0006-rename-map-sharing.md)） — SSR された HTML と配信 CSS の短縮名が一致する。ビルドは client → server の順（違反は明示的なエラーで検出）
+- **SSR ビルドに CSS import を付与しない** — サーバーバンドルに必要なのはクラス名だけで、CSS の配信はクライアントビルドの責務
+- **ルート単位の CSS 分割**（`routesDir` 指定時、[ADR-0007](docs/decisions/0007-route-styles.md)） — ルート専用 CSS（例: `/admin` だけのスタイル）はそのルートにのみ、共有 CSS は共有ファイルとして配信される
+
+renderer には `routeCssHrefs` でルートに応じた `<link>` を注入する（対応表はビルド時にインラインされるため、実行時のファイルアクセスは不要。serverless でも動く）:
+
+```tsx
+// app/routes/_renderer.tsx
+import { routeCssHrefs } from "@best-css/vite-plugin/route-css";
+
+{routeCssHrefs(c.req.path).map((href) => (
+  <link href={href} rel="stylesheet" />
+))}
 ```
 
-dev では HMR のため `client.ts` から dev 限定の side-effect import で全スタイルを読み込む（本番ビルドでは消える）:
+dev のスタイルは仮想モジュールを 1 行 import するだけ（全ルートのスタイルを HMR 付きで収集。本番ビルドでは空になる）:
 
 ```ts
 // app/client.ts
-if (import.meta.env.DEV) {
-  void import("./components/ui.js");
-}
+import "virtual:best-css/dev-styles";
 ```
+
+仮想モジュールの型は tsconfig に追加する: `"types": ["vite/client", "@best-css/vite-plugin/client"]`
 
 ### テスト（Vitest）
 

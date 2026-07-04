@@ -1,11 +1,7 @@
 import { createClient } from "honox/client";
 
-// dev のみ: 全スタイルをモジュールチェーン経由で読み込む（HMR が効く）。
-// 本番はルート単位のスタイルエントリ（routeStyles）が CSS を出力し、
-// renderer が対応する <link> を注入するため、この import はビルドで消える
-if (import.meta.env.DEV) {
-  void import("./components/ui.js");
-  void import("./components/admin-panel.js");
-}
+// dev: 全ルートのスタイルを HMR 付きで読み込む（本番ビルドでは空になり、
+// ルート単位のスタイルエントリ + <link> 注入に置き換わる）
+import "virtual:best-css/dev-styles";
 
 createClient();

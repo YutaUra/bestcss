@@ -7,10 +7,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./route-css": {
+      "types": "./dist/route-css.d.ts",
+      "default": "./dist/route-css.js"
+    },
+    "./client": {
+      "types": "./client.d.ts"
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "client.d.ts"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
