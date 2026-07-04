@@ -141,7 +141,10 @@ pnpm install
 pnpm build                                 # packages/core と packages/vite-plugin をビルド
 pnpm --filter example-vite-react dev       # SPA サンプル（React）を起動
 pnpm --filter example-honox-mpa dev        # MPA サンプル（HonoX, SSR + islands）を起動
+pnpm --filter example-vite-storybook storybook  # Storybook サンプルを起動
 ```
+
+Storybook（react-vite フレームワーク）はプロジェクトの `vite.config.ts` を読み込むため、**Storybook 側の追加設定なしで** css`` がストーリーに効く（[examples/vite-storybook](examples/vite-storybook)）。
 
 ## 特徴（目標）
 
