@@ -56,24 +56,34 @@ const card = css`
 `;
 ```
 
+### @keyframes はスコープ付きで書ける
+
+css`` のブロック直下に書いた `@keyframes` は、クラス名と同様に内容ハッシュで命名し直され、名前の衝突が起きない。参照（`animation` / `animation-name`）は同一ファイル内のブロック間で解決される:
+
+```ts
+const title = css`
+  animation: pulse 2s infinite;
+
+  @keyframes pulse {
+    50% { opacity: 0.5; }
+  }
+`;
+```
+
 ### グローバルな定義は通常の CSS ファイルに書く
 
-`@keyframes`・デザイントークン（`:root` のカスタムプロパティ）・要素デフォルトは、クラスにスコープできないグローバルな存在なので、通常の `.css` ファイルに書いて import する（[examples/vite-react/src/global.css](examples/vite-react/src/global.css) 参照）。`@keyframes` を css`` 内に書くとビルドエラーになる（暗黙に無視しない）。
+デザイントークン（`:root` のカスタムプロパティ）や要素デフォルトは、クラスにスコープできないグローバルな存在なので、通常の `.css` ファイルに書いて import する（[examples/vite-react/src/global.css](examples/vite-react/src/global.css) 参照）。
 
 ```css
 /* global.css */
 :root {
   --brand: #2563eb;
 }
-@keyframes pulse {
-  50% { opacity: 0.5; }
-}
 ```
 
 ```ts
 const title = css`
   color: var(--brand);
-  animation: pulse 2s infinite;
 `;
 ```
 
@@ -128,7 +138,7 @@ pnpm --filter example-vite-react dev       # サンプルアプリを起動
 | ネスト / 条件付き at-rules | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 | 🟡 | ✅ |
 | HTML サイズ最適化（class 属性） | ✅ ¹ | 🟡 | 🟡 | 🟡 ² | ❌ | ❌ | 🟡 ³ | 🟡 |
 | CSS サイズ最適化（重複排除） | ✅ | ❌ | 🟡 | 🟡 | ✅ | ✅ | ✅ | ❌ |
-| スコープ付き @keyframes | ❌ | ✅ | ✅ | ✅ | 🟡 | 🟡 | 🟡 | ✅ |
+| スコープ付き @keyframes | ✅ | ✅ | ✅ | ✅ | 🟡 | 🟡 | 🟡 | ✅ |
 | グローバルスタイル用 API | 🟡 ⁴ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
 | 実行時の動的スタイル | ➖ ⁵ | 🟡 | ✅ | 🟡 | 🟡 | ❌ | ❌ | ❌ |
 | 型安全なスタイル定義 | ➖ ⁶ | ❌ | 🟡 | ✅ | ✅ | 🟡 | 🟡 | ❌ |
@@ -147,7 +157,7 @@ pnpm --filter example-vite-react dev       # サンプルアプリを起動
 
 ### この表から見える不足（解消候補）
 
-1. **スコープ付き @keyframes** — Linaria / vanilla-extract / CSS Modules は可能。現状は通常の CSS ファイルへの回避が必要で、名前もグローバル
+1. ~~スコープ付き @keyframes~~ — 2026-07-04 解消（css`` 内に書けるようになった）
 2. **Vite 以外のビルド環境対応** — Phase 4 として計画済み（[docs/plan.md](docs/plan.md)）
 3. **エディタ支援の検証** — 既存拡張で css`` のハイライト・補完が効くかの確認と案内
 4. **ソースマップ** — 表外だが、transform が sourcemap を返しておらず dev のデバッグ体験に影響する（既知の不足）

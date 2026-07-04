@@ -2,6 +2,7 @@ import { transform as transformCss } from "lightningcss";
 import MagicString from "magic-string";
 import { parseSync } from "oxc-parser";
 import { generateClassName } from "./class-name.js";
+import { extractKeyframes, rewriteAnimationNames } from "./keyframes.js";
 
 /** ユーザーが css をここから import したときだけ変換対象とする */
 const CSS_TAG_MODULE = "@best-css/core";
@@ -127,9 +128,14 @@ export function transform(
   }
 
   const ms = new MagicString(code);
-  const cssChunks: string[] = [];
   const classNames: string[] = [];
 
+  // 1 パス目: 全ブロックから @keyframes を抽出する。
+  // 参照の解決をファイル単位にする（CSS Modules と同じメンタルモデル）ため、
+  // クラス化より先に全ブロック分のリネーム表を確定させる必要がある
+  const blocks: Array<{ tag: TaggedTemplateNode; css: string }> = [];
+  const keyframesRenames = new Map<string, string>();
+  const keyframesStatements = new Map<string, string>();
   for (const tag of tags) {
     if (tag.quasi.expressions.length > 0) {
       throw new Error(
@@ -138,10 +144,28 @@ export function transform(
       );
     }
     const rawCss = tag.quasi.quasis[0]?.value.raw ?? "";
-    const className = generateClassName(rawCss);
+    const { css: blockCss, keyframes } = extractKeyframes(rawCss);
+    for (const kf of keyframes) {
+      keyframesRenames.set(kf.name, kf.scopedName);
+      // scopedName は内容ハッシュなので、同一内容はここで自然に 1 つに収束する
+      keyframesStatements.set(
+        kf.scopedName,
+        `@keyframes ${kf.scopedName} {${kf.body}}`,
+      );
+    }
+    blocks.push({ tag, css: blockCss });
+  }
+
+  // 2 パス目: animation 参照を書き換えてからクラス化する。
+  // クラス名は書き換え後の CSS から生成し、意味的に同じブロックが
+  // ファイルを跨いで同一クラス名に収束するようにする
+  const cssChunks: string[] = [...keyframesStatements.values()];
+  for (const block of blocks) {
+    const rewritten = rewriteAnimationNames(block.css, keyframesRenames);
+    const className = generateClassName(rewritten);
     classNames.push(className);
-    cssChunks.push(`.${className} {${rawCss}}`);
-    ms.overwrite(tag.start, tag.end, JSON.stringify(className));
+    cssChunks.push(`.${className} {${rewritten}}`);
+    ms.overwrite(block.tag.start, block.tag.end, JSON.stringify(className));
   }
 
   // 変換後は css の参照が残らないため import ごと除去する（ゼロランタイム）。

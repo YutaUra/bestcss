@@ -11,12 +11,17 @@
 const FNV_OFFSET_BASIS = 0x811c9dc5;
 const FNV_PRIME = 0x01000193;
 
-export function generateClassName(cssText: string): string {
+/** 内容から決定的な短いハッシュ文字列を作る（クラス名・keyframes 名で共用） */
+export function contentHash(text: string): string {
   let hash = FNV_OFFSET_BASIS;
-  for (let i = 0; i < cssText.length; i++) {
-    hash ^= cssText.charCodeAt(i);
+  for (let i = 0; i < text.length; i++) {
+    hash ^= text.charCodeAt(i);
     hash = Math.imul(hash, FNV_PRIME);
   }
+  return (hash >>> 0).toString(36);
+}
+
+export function generateClassName(cssText: string): string {
   // CSS クラス名は数字始まりが許されないため "bc" プレフィックスで保証する
-  return `bc${(hash >>> 0).toString(36)}`;
+  return `bc${contentHash(cssText)}`;
 }

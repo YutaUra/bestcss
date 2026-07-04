@@ -153,19 +153,60 @@ describe("transform", () => {
     expect(result!.css).toContain("@container");
   });
 
-  it("@keyframes は css`` 内に書けず、ファイル名を含むエラーになる", () => {
-    // keyframes はグローバルな存在でクラスにスコープできないため、
-    // 通常の .css ファイルに書く（README の書き方ガイド参照）。
-    // 暗黙に無視せずビルドエラーで気付けることを保証する
+  it("@keyframes はスコープ付きの名前でトップレベルに出力される", () => {
     const code = [
       `import { css } from "@best-css/core";`,
-      `const a = css\`animation: spin 1s; @keyframes spin { to { transform: rotate(360deg); } }\`;`,
+      `const a = css\`animation: spin 1s linear; @keyframes spin { to { transform: rotate(360deg); } }\`;`,
     ].join("\n");
 
-    expect(() => transform(code, { filename: FILENAME })).toThrow(
-      /CSS の解析に失敗/,
-    );
-    expect(() => transform(code, { filename: FILENAME })).toThrow(FILENAME);
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result!.css).toMatch(/@keyframes bk[a-z0-9]+/);
+    // 元のグローバル名は出力に残らない
+    expect(result!.css).not.toMatch(/@keyframes spin/);
+    // animation 参照もスコープ名に書き換わる
+    // （Lightning CSS がショートハンドの語順を正規化するため語順には依存しない）
+    expect(result!.css).toMatch(/animation:[^;]*bk[a-z0-9]+/);
+  });
+
+  it("同一ファイル内の別ブロックからも @keyframes を参照できる", () => {
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`@keyframes pulse { 50% { opacity: 0.5; } }\`;`,
+      `const b = css\`animation-name: pulse;\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    const scoped = result!.css.match(/@keyframes (bk[a-z0-9]+)/)?.[1];
+    expect(result!.css).toContain(`animation-name: ${scoped}`);
+  });
+
+  it("animation 系以外の宣言値は keyframes 名と一致しても書き換えない", () => {
+    // keyframes 名の参照書き換えを animation / animation-name の値に
+    // 限定しないと、"block" のような CSS キーワードと同名の keyframes が
+    // 無関係な宣言を壊してしまう
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`display: block; animation-name: block; @keyframes block { to { opacity: 0; } }\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result!.css).toContain("display: block");
+    expect(result!.css).toMatch(/animation-name: bk[a-z0-9]+/);
+  });
+
+  it("同一内容の @keyframes は同一名に収束し 1 回だけ出力される", () => {
+    const code = [
+      `import { css } from "@best-css/core";`,
+      `const a = css\`animation-name: spinA; @keyframes spinA { to { opacity: 0; } }\`;`,
+      `const b = css\`animation-name: spinB; @keyframes spinB { to { opacity: 0; } }\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result!.css.match(/@keyframes/g)).toHaveLength(1);
   });
 
   it("不正な CSS はファイル名を含むエラーで拒否する", () => {

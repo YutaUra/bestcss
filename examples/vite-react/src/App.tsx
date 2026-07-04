@@ -11,6 +11,12 @@ const title = css`
   font-size: 2rem;
   color: var(--brand);
   animation: pulse 2s ease-in-out infinite;
+
+  @keyframes pulse {
+    50% {
+      opacity: 0.5;
+    }
+  }
 `;
 
 const button = css`
