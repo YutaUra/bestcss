@@ -42,10 +42,12 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 **完了条件**:
 - [x] 同一内容の css`` ブロックがモジュールを跨いで 1 ルールに重複排除される（cssMinify 設定に依存しない）
 - [ ] 宣言単位の共有: 異なるブロック間で重複する宣言（例: display: flex）をセレクタリストに括り出す設計判断と実装
-- [ ] tailwind 方式（アトミック class 列挙）と比較して HTML サイズが小さいことをベンチマークで示す
-- [ ] 既存手法（tailwindcss / CSS Modules 素朴出力）との HTML + CSS 合計サイズ比較レポートがある
+- [x] tailwind 方式（アトミック class 列挙）と比較して HTML サイズが小さいことをベンチマークで示す（class 属性 3,589 bytes vs tailwind 8,985 bytes）
+- [x] 既存手法との HTML + CSS 合計サイズ比較レポートがある（[bench/RESULTS.md](../bench/RESULTS.md)）
 
 **技術検証メモ（2026-07-04）**: Vite 8 の cssMinify（Lightning CSS）は「同一セレクタの重複ルール」と「隣接する同一宣言集合のセレクタリスト化」まではやる。**部分的な宣言重複の括り出し（`.a{display:flex;gap:4px}` と `.b{display:flex;gap:8px}` から `display:flex` を共有）はやらない** — ここが best-css 独自の最適化の主戦場になる。ただし括り出しはクラス併用時のカスケード順序に影響し得るため、設計判断（ADR 候補）が必要。
+
+**ベンチマーク結果（2026-07-04、[bench/RESULTS.md](../bench/RESULTS.md)）**: 同一ダッシュボード UI の合計 gzip で best-css 1,729 / CSS Modules 1,908 / tailwind 2,917 bytes。現時点で全指標最小。宣言単位共有の伸びしろは raw 27%（431 bytes）が理論上限だが、セレクタリストのオーバーヘッドと gzip 圧縮を考慮すると実効はより小さい — 宣言共有の設計はコスト対効果を慎重に判断する。
 
 ### Phase 3: styled-components 構文
 

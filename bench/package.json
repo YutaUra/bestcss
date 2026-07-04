@@ -1,0 +1,19 @@
+{
+  "name": "bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "bench": "node run.mjs"
+  },
+  "dependencies": {
+    "@best-css/core": "workspace:*",
+    "@best-css/vite-plugin": "workspace:*"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.2",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.3"
+  }
+}
