@@ -12,7 +12,7 @@
   "author": "Yuta Ura",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YutaUra/best-css.git",
+    "url": "git+https://github.com/YutaUra/bestcss.git",
     "directory": "packages/vite-plugin"
   },
   "type": "module",

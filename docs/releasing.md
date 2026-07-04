@@ -10,7 +10,7 @@ npm への公開手順。公開対象は `@bestcss/core` / `@bestcss/vite-plugin
 
 - npm の organization **`bestcss`**（スコープ `@bestcss/*` の公開に必要）
 - `npm login` 済みであること
-- GitHub リポジトリ（package.json の repository は `github.com/YutaUra/best-css` を指している）
+- GitHub リポジトリ（package.json の repository は `github.com/YutaUra/bestcss` を指している）
 
 ## 手順
 
