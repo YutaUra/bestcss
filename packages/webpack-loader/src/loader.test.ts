@@ -60,7 +60,7 @@ async function buildWithWebpack(): Promise<{ js: string; css: string }> {
   };
 }
 
-describe("@best-css/webpack-loader", () => {
+describe("@bestcss/webpack-loader", () => {
   it("webpack ビルドで css`` がクラス名に置換され、CSS が抽出される", async () => {
     const { js, css } = await buildWithWebpack();
 

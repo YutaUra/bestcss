@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { gzipSync } from "node:zlib";
-import { bestCss } from "@best-css/vite-plugin";
+import { bestCss } from "@bestcss/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { build } from "vite";
 

@@ -1,4 +1,4 @@
-import { css } from "@best-css/core";
+import { css } from "@bestcss/core";
 
 const base = css`
   display: inline-flex;

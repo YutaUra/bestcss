@@ -7,7 +7,7 @@ import {
   dedupeCss,
   generateClassName,
   transform,
-} from "@best-css/core";
+} from "@bestcss/core";
 import type { Plugin } from "vite";
 
 const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
@@ -62,7 +62,7 @@ export interface BestCssSsrOptions {
    * ルートファイルのディレクトリ（root からの相対パス。例: "app/routes"）。
    * 指定すると各ルートの import グラフから CSS を集めてルート単位に分割し、
    * ルート → CSS の対応表を出力する。renderer 側は
-   * `@best-css/vite-plugin/route-css` の routeCssHrefs で <link> を注入できる
+   * `@bestcss/vite-plugin/route-css` の routeCssHrefs で <link> を注入できる
    */
   routesDir?: string;
 }
@@ -156,9 +156,9 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         return;
       }
       const importSources = collectImportSources(code, file);
-      // 文字列やコメントに "@best-css/core" を含むだけのファイル（core 自身の
+      // 文字列やコメントに "@bestcss/core" を含むだけのファイル（core 自身の
       // 実装など）を拾わないよう、AST 上の import 指定子で判定する
-      if (importSources.includes("@best-css/core")) {
+      if (importSources.includes("@bestcss/core")) {
         styledFiles.push(file);
       }
       for (const spec of importSources) {
@@ -251,11 +251,11 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     enforce: "pre",
 
     config() {
-      // route-css ヘルパー（@best-css/vite-plugin/route-css）は仮想モジュールを
+      // route-css ヘルパー（@bestcss/vite-plugin/route-css）は仮想モジュールを
       // import するため、SSR で externalize されると Node がそのまま実行して
       // 解決に失敗する。プラグイン側で noExternal を設定し、利用側の設定を不要にする
       return {
-        ssr: { noExternal: ["@best-css/vite-plugin"] },
+        ssr: { noExternal: ["@bestcss/vite-plugin"] },
       };
     },
 
@@ -407,7 +407,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           });
           sourceMtimes.set(base, mtime);
           if (result === null) {
-            // @best-css/core を import していても css`` がないファイルは
+            // @bestcss/core を import していても css`` がないファイルは
             // 空の CSS として扱う（ENOENT でビルドを壊さない）
             return "";
           }

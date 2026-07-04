@@ -79,9 +79,9 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 **方針（[ADR-0008](decisions/0008-non-vite-integration-strategy.md)）**: unplugin ではなく matchResource 方式の webpack loader。Turbopack も loader 互換で同じ発想を展開する
 
 **完了条件**:
-- [x] webpack で css`` の抽出・ゼロランタイムが動く（@best-css/webpack-loader、実ビルドテストで検証）
+- [x] webpack で css`` の抽出・ゼロランタイムが動く（@bestcss/webpack-loader、実ビルドテストで検証）
 - [x] Next.js（Turbopack）の example で動く（`turbopack.rules` + `as: '*.css'` を build / dev で検証。examples/nextjs）
-- [ ] loader 版のサイズ最適化（クラス名短縮・重複排除）の要否判断と実装
+- [x] loader 版のサイズ最適化: webpack は BestCssWebpackPlugin（processAssets フック）で短縮・重複排除に対応。Turbopack はアセット後処理フックが存在しないため対象外（内容ハッシュ名のまま配信）
 
 ## マイルストーン
 
@@ -94,7 +94,7 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 | M5 | サイズ最適化の技術検証（Phase 2） | ✅ 完了（宣言単位共有のみ保留として切り出し） |
 | M5.5 | SSR 対応スイート（keyframes / sourcemap / ssr オプション / ルート分割） | ✅ 完了 |
 | M6 | 実プロジェクトへの導入開始（Phase 3） | ⬜ 未着手（導入先の決定待ち） |
-| M7 | Vite 以外のビルド環境の技術検証（Phase 4） | 🟦 進行中（webpack loader 実証済み） |
+| M7 | Vite 以外のビルド環境の技術検証（Phase 4） | ✅ 完了 |
 | M8 | Next.js（Turbopack）example | ✅ 完了 |
 
 ## 計画の見直しトリガー

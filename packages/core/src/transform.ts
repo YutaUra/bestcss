@@ -6,7 +6,7 @@ import { generateClassName } from "./class-name.js";
 import { extractKeyframes, rewriteAnimationNames } from "./keyframes.js";
 
 /** ユーザーが css をここから import したときだけ変換対象とする */
-const CSS_TAG_MODULE = "@best-css/core";
+const CSS_TAG_MODULE = "@bestcss/core";
 
 export interface TransformOptions {
   filename: string;
@@ -72,7 +72,7 @@ function walk(node: unknown, visit: (node: AstNode) => void): void {
   }
 }
 
-/** import { css } from "@best-css/core" のローカル名と import 文を探す */
+/** import { css } from "@bestcss/core" のローカル名と import 文を探す */
 function findCssImport(
   body: unknown[],
 ): { localName: string; declaration: AstNode } | null {

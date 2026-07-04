@@ -1,4 +1,4 @@
-import { routeCssHrefs } from "@best-css/vite-plugin/route-css";
+import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
 import { jsxRenderer, useRequestContext } from "hono/jsx-renderer";
 import { Script } from "honox/server";
 

@@ -10,7 +10,7 @@
 
 ## Decision
 
-- 検出: **oxc-parser** で AST を構築し、`@best-css/core` から import された `css` のタグ付きテンプレートのみを対象とする
+- 検出: **oxc-parser** で AST を構築し、`@bestcss/core` から import された `css` のタグ付きテンプレートのみを対象とする
 - 書き換え: **magic-string** で span（バイト位置）ベースの部分置換を行う
 
 補足として、変換コアは oxc の AST 型に直接依存せず最小限の構造型で扱う。パーサー差し替え時の影響範囲を閉じ込めるため。

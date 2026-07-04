@@ -1,4 +1,4 @@
-import { bestCss } from "@best-css/vite-plugin";
+import { bestCss } from "@bestcss/vite-plugin";
 import ssg from "@hono/vite-ssg";
 import honox from "honox/vite";
 import client from "honox/vite/client";

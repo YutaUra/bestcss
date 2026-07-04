@@ -7,6 +7,6 @@
 export function css(_strings: TemplateStringsArray, ..._values: never[]): string {
   throw new Error(
     "best-css: css`` が実行時に呼ばれました。" +
-      "ビルド時に変換されるはずなので、@best-css/vite-plugin が設定されているか確認してください。",
+      "ビルド時に変換されるはずなので、@bestcss/vite-plugin が設定されているか確認してください。",
   );
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@best-css/vite-plugin",
+  "name": "@bestcss/vite-plugin",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -25,7 +25,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@best-css/core": "workspace:*"
+    "@bestcss/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.1.0",

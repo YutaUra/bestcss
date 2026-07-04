@@ -10,12 +10,12 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@best-css/core": "workspace:*",
+    "@bestcss/core": "workspace:*",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@best-css/vite-plugin": "workspace:*",
+    "@bestcss/vite-plugin": "workspace:*",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",

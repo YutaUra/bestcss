@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import bestCssLoader from "./index.js";
 
 const SOURCE = [
-  `import { css } from "@best-css/core";`,
+  `import { css } from "@bestcss/core";`,
   `export const a = css\`color: red;\`;`,
 ].join("\n");
 
@@ -41,7 +41,7 @@ describe("importStyle オプション", () => {
     const output = runLoader({});
 
     expect(output).toContain(
-      "/proj/src/Button.tsx.best-css.css!=!@best-css/webpack-loader/css!/proj/src/Button.tsx",
+      "/proj/src/Button.tsx.best-css.css!=!@bestcss/webpack-loader/css!/proj/src/Button.tsx",
     );
   });
 

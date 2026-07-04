@@ -1,4 +1,4 @@
-import { bestCss } from "@best-css/vite-plugin";
+import { bestCss } from "@bestcss/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 

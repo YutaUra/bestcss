@@ -1,3 +1,3 @@
-import { css } from "@best-css/core";
+import { css } from "@bestcss/core";
 
 export const lazyStyled = css`padding: 77px;`;

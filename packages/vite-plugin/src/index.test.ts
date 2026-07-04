@@ -85,7 +85,7 @@ describe("bestCss プラグイン", () => {
   it("出力 JS にランタイムコードが残らない（ゼロランタイム）", async () => {
     const { js } = await buildFixture();
 
-    expect(js).not.toContain("@best-css/core");
+    expect(js).not.toContain("@bestcss/core");
     // css スタブ（実行時エラーを投げるコード）がバンドルされていないこと
     expect(js).not.toContain("ビルド時に変換");
   });
@@ -131,7 +131,7 @@ describe("bestCss プラグイン", () => {
         write: false,
         ssr: FIXTURE,
         rollupOptions: {
-          external: ["@best-css/core"],
+          external: ["@bestcss/core"],
         },
       },
     });

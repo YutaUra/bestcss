@@ -17,13 +17,13 @@ Phase 4（Vite 以外のビルド環境対応）の技術検証。Vite 統合は
 
 **「実在するソースファイル自身を、CSS として再読み込みさせる」** 方式を採る。
 
-1. メイン loader が css`` をクラス名リテラルへ変換し（core の `transform` を無改造で再利用）、`<file>.best-css.css!=!@best-css/webpack-loader/css!<file>` という **matchResource（`!=!`）構文**の import を追記する
+1. メイン loader が css`` をクラス名リテラルへ変換し（core の `transform` を無改造で再利用）、`<file>.best-css.css!=!@bestcss/webpack-loader/css!<file>` という **matchResource（`!=!`）構文**の import を追記する
 2. matchResource が `.css` なので、利用側の既存 CSS ルール（css-loader / mini-css-extract / Next.js 内蔵の CSS 処理）がそのまま適用される
-3. `@best-css/webpack-loader/css` は元ファイルを受け取り、抽出 CSS テキストを返すだけの loader
+3. `@bestcss/webpack-loader/css` は元ファイルを受け取り、抽出 CSS テキストを返すだけの loader
 
 vanilla-extract の webpack 統合と同じ確立されたパターンであり、ファイルが実在するため仮想モジュール機構が不要。Turbopack へは同じ発想を `rules` の query 条件 + `as: '*.css'` で展開できる見込み（未検証、M8 で確認する）。
 
-`@best-css/webpack-loader` として実装し、webpack 5 + css-loader + mini-css-extract の実ビルドでゼロランタイム・クラス名一致を検証済み。
+`@bestcss/webpack-loader` として実装し、webpack 5 + css-loader + mini-css-extract の実ビルドでゼロランタイム・クラス名一致を検証済み。
 
 ## Alternatives Considered
 

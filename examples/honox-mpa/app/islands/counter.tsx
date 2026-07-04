@@ -1,4 +1,4 @@
-import { css } from "@best-css/core";
+import { css } from "@bestcss/core";
 import { useState } from "hono/jsx";
 
 const button = css`

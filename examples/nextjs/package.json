@@ -8,13 +8,13 @@
     "start": "next start"
   },
   "dependencies": {
-    "@best-css/core": "workspace:*",
+    "@bestcss/core": "workspace:*",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
-    "@best-css/webpack-loader": "workspace:*",
+    "@bestcss/webpack-loader": "workspace:*",
     "@types/node": "^26.1.0",
     "@types/react": "^19.2.17",
     "typescript": "^6.0.3"

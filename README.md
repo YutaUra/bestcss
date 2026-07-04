@@ -31,7 +31,7 @@ export const Button = () => <button className={button}>Click</button>;
 必要な場合のみ、エントリファイルで import する（中身は [modern-normalize](https://github.com/sindresorhus/modern-normalize) への委譲）:
 
 ```ts
-import "@best-css/core/reset.css";
+import "@bestcss/core/reset.css";
 ```
 
 自動注入にしていないのは、reset がコンポーネントスタイルより前に読み込まれる必要があり、import 順 = カスケード順をユーザーが制御できるべきだからである。別のリセットを使いたい場合は、これを import せず好きなものを直接 import すればよい。
@@ -123,7 +123,7 @@ renderer には `routeCssHrefs` でルートに応じた `<link>` を注入す�
 
 ```tsx
 // app/routes/_renderer.tsx
-import { routeCssHrefs } from "@best-css/vite-plugin/route-css";
+import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
 
 {routeCssHrefs(c.req.path).map((href) => (
   <link href={href} rel="stylesheet" />
@@ -137,14 +137,14 @@ dev のスタイルは仮想モジュールを 1 行 import するだけ（全�
 import "virtual:best-css/dev-styles";
 ```
 
-仮想モジュールの型は tsconfig に追加する: `"types": ["vite/client", "@best-css/vite-plugin/client"]`
+仮想モジュールの型は tsconfig に追加する: `"types": ["vite/client", "@bestcss/vite-plugin/client"]`
 
 ### テスト（Vitest）
 
 css`` はビルド時変換が前提のため、プラグインなしでテストを実行すると実行時エラーになる。Vitest は Vite ベースなので、`vitest.config.ts` に同じプラグインを並べるだけでよい:
 
 ```ts
-import { bestCss } from "@best-css/vite-plugin";
+import { bestCss } from "@bestcss/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
@@ -207,7 +207,7 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 ⁵ ランタイム動的スタイルとトークン機構は charter で対象外。CSS カスタムプロパティで代替する
 ⁶ 生 CSS 文法を優先する設計上のトレードオフ。`${}` 補間は型レベルで拒否する
 ⁷ `css` タグ対応の既存エディタ拡張（vscode-styled-components 等）が流用できる見込み。未検証
-⁸ webpack / Next.js（Turbopack）は `@best-css/webpack-loader` で抽出・ゼロランタイムが動作（[ADR-0008](docs/decisions/0008-non-vite-integration-strategy.md)、[examples/nextjs](examples/nextjs)）。サイズ最適化（クラス名短縮・重複排除）と SSR スイート（ルート分割等）は現状 Vite 版のみ
+⁸ webpack / Next.js（Turbopack）は `@bestcss/webpack-loader` で抽出・ゼロランタイムが動作（[ADR-0008](docs/decisions/0008-non-vite-integration-strategy.md)、[examples/nextjs](examples/nextjs)）。サイズ最適化（短縮・重複排除）は webpack では `BestCssWebpackPlugin` で対応、Turbopack はアセット後処理フックが無いため未対応（内容ハッシュ名のまま）。SSR スイート（ルート分割等）は Vite 版のみ
 
 ### この表から見える不足（解消候補）
 

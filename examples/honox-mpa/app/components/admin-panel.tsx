@@ -1,4 +1,4 @@
-import { css } from "@best-css/core";
+import { css } from "@bestcss/core";
 import type { Child } from "hono/jsx";
 
 // admin ルートでしか使わないスタイル。

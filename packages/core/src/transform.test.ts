@@ -25,7 +25,7 @@ describe("transform", () => {
   it("css`` をクラス名の文字列リテラルに置換し、CSS を抽出する", () => {
     // Arrange
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const button = css\`padding: 8px 16px;\`;`,
     ].join("\n");
 
@@ -40,20 +40,20 @@ describe("transform", () => {
     expect(result!.css).toContain("padding: 8px 16px;");
   });
 
-  it("変換後のコードから @best-css/core の import を除去する（ゼロランタイム）", () => {
+  it("変換後のコードから @bestcss/core の import を除去する（ゼロランタイム）", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const button = css\`color: red;\`;`,
     ].join("\n");
 
     const result = transform(code, { filename: FILENAME });
 
-    expect(result!.code).not.toContain("@best-css/core");
+    expect(result!.code).not.toContain("@bestcss/core");
   });
 
   it("エイリアス import（css as styled）でも変換する", () => {
     const code = [
-      `import { css as style } from "@best-css/core";`,
+      `import { css as style } from "@bestcss/core";`,
       `const button = style\`color: red;\`;`,
     ].join("\n");
 
@@ -65,7 +65,7 @@ describe("transform", () => {
 
   it("${} 補間はファイル名を含むエラーで拒否する", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       "const button = css`color: ${dynamic};`;",
     ].join("\n");
 
@@ -85,7 +85,7 @@ describe("transform", () => {
 
   it("複数の css`` をそれぞれ独立したクラスとして抽出する", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`color: red;\`;`,
       `const b = css\`color: blue;\`;`,
     ].join("\n");
@@ -101,7 +101,7 @@ describe("transform", () => {
 
   it("生成したクラス名の一覧を返す", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`color: red;\`;`,
       `const b = css\`color: blue;\`;`,
     ].join("\n");
@@ -115,7 +115,7 @@ describe("transform", () => {
 
   it("ネスト（&:hover）を含む CSS を処理できる", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const button = css\`
         color: red;
         &:hover {
@@ -131,7 +131,7 @@ describe("transform", () => {
 
   it("@media を css`` 内にネストして書ける", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`color: red; @media (min-width: 600px) { color: blue; }\`;`,
     ].join("\n");
 
@@ -143,7 +143,7 @@ describe("transform", () => {
 
   it("@supports / @container も css`` 内にネストして書ける", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`display: grid; @supports (display: flex) { display: flex; }\`;`,
       `const b = css\`color: red; @container (min-width: 400px) { color: blue; }\`;`,
     ].join("\n");
@@ -156,7 +156,7 @@ describe("transform", () => {
 
   it("@keyframes はスコープ付きの名前でトップレベルに出力される", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`animation: spin 1s linear; @keyframes spin { to { transform: rotate(360deg); } }\`;`,
     ].join("\n");
 
@@ -172,7 +172,7 @@ describe("transform", () => {
 
   it("同一ファイル内の別ブロックからも @keyframes を参照できる", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`@keyframes pulse { 50% { opacity: 0.5; } }\`;`,
       `const b = css\`animation-name: pulse;\`;`,
     ].join("\n");
@@ -188,7 +188,7 @@ describe("transform", () => {
     // 限定しないと、"block" のような CSS キーワードと同名の keyframes が
     // 無関係な宣言を壊してしまう
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`display: block; animation-name: block; @keyframes block { to { opacity: 0; } }\`;`,
     ].join("\n");
 
@@ -200,7 +200,7 @@ describe("transform", () => {
 
   it("同一内容の @keyframes は同一名に収束し 1 回だけ出力される", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const a = css\`animation-name: spinA; @keyframes spinA { to { opacity: 0; } }\`;`,
       `const b = css\`animation-name: spinB; @keyframes spinB { to { opacity: 0; } }\`;`,
     ].join("\n");
@@ -212,7 +212,7 @@ describe("transform", () => {
 
   it("元ソースへのソースマップを返す", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const button = css\`color: red;\`;`,
       `export const f = () => button;`,
     ].join("\n");
@@ -227,7 +227,7 @@ describe("transform", () => {
   it("出力 CSS から css`` の元位置へのソースマップを返す", () => {
     // Arrange: css`` は 0-based で 2 行目にある
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const other = 1;`,
       `const button = css\`color: red;\`;`,
     ].join("\n");
@@ -252,7 +252,7 @@ describe("transform", () => {
 
   it("不正な CSS はファイル名を含むエラーで拒否する", () => {
     const code = [
-      `import { css } from "@best-css/core";`,
+      `import { css } from "@bestcss/core";`,
       `const button = css\`color: {{{;\`;`,
     ].join("\n");
 

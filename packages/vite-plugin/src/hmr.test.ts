@@ -12,7 +12,7 @@ const ENTRY_URL = "/.tmp-hmr-entry.ts";
 // 正規化する（blue → #00f）ため、色名は出力に残る保証がない
 const sourceWithPadding = (padding: string): string =>
   [
-    `import { css } from "@best-css/core";`,
+    `import { css } from "@bestcss/core";`,
     `export const cls = css\`padding: ${padding};\`;`,
   ].join("\n");
 

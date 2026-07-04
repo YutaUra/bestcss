@@ -15,14 +15,14 @@ const nextConfig: NextConfig = {
         },
         loaders: [
           {
-            loader: "@best-css/webpack-loader",
+            loader: "@bestcss/webpack-loader",
             options: { importStyle: "query" },
           },
         ],
       },
       "*": {
         condition: { all: [{ not: "foreign" }, { query: /best-css/ }] },
-        loaders: ["@best-css/webpack-loader/css"],
+        loaders: ["@bestcss/webpack-loader/css"],
         as: "*.css",
       },
     },

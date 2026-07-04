@@ -27,7 +27,7 @@ async function buildWith(options: {
     build: {
       write: false,
       ...(options.ssr
-        ? { ssr: entry, rollupOptions: { external: ["@best-css/core"] } }
+        ? { ssr: entry, rollupOptions: { external: ["@bestcss/core"] } }
         : { lib: { entry, formats: ["es"], fileName: "out" } }),
     },
   });

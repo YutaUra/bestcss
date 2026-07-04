@@ -1,4 +1,4 @@
-import { css } from "@best-css/core";
+import { css } from "@bestcss/core";
 import type { Ui } from "../shared/page.js";
 
 const buttonBase = css`
