@@ -196,7 +196,7 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 | 型安全なスタイル定義 | ➖ ⁶ | ❌ | 🟡 | ✅ | ✅ | 🟡 | 🟡 | ❌ |
 | テーマ / デザイントークン機構 | ➖ ⁵ | 🟡 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Vite 統合 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Vite 以外（webpack / Next.js 等） | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Vite 以外（webpack / Next.js 等） | 🟡 ⁸ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | エディタ支援（ハイライト・補完） | 🟡 ⁷ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
 
 ¹ 1 要素 1〜2 クラス + ビルド時の頻度順短縮（[ADR-0004](docs/decisions/0004-build-time-class-name-minification.md)）。実測は [bench/RESULTS.md](bench/RESULTS.md)
@@ -206,6 +206,7 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 ⁵ ランタイム動的スタイルとトークン機構は charter で対象外。CSS カスタムプロパティで代替する
 ⁶ 生 CSS 文法を優先する設計上のトレードオフ。`${}` 補間は型レベルで拒否する
 ⁷ `css` タグ対応の既存エディタ拡張（vscode-styled-components 等）が流用できる見込み。未検証
+⁸ webpack は `@best-css/webpack-loader` で抽出・ゼロランタイムが動作（[ADR-0008](docs/decisions/0008-non-vite-integration-strategy.md)）。Next.js / Turbopack と loader 版のサイズ最適化は未対応
 
 ### この表から見える不足（解消候補）
 

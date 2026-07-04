@@ -72,11 +72,16 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 - [ ] 実利用で見つかった課題が Issue / plan に記録されている
 - [ ] charter の成功条件「既存ライブラリに戻りたくならない」を実感レベルで検証できている
 
-### Phase 4: Vite 以外への展開
+### Phase 4: Vite 以外への展開（進行中）
 
-**目標**: unplugin 化などにより Next.js 等の Vite を用いないプロジェクトへ統合できるようにする
+**目標**: Next.js 等の Vite を用いないプロジェクトへ統合できるようにする
 
-詳細は Phase 2〜3 の結果を見て具体化する（TBD）。
+**方針（[ADR-0008](decisions/0008-non-vite-integration-strategy.md)）**: unplugin ではなく matchResource 方式の webpack loader。Turbopack も loader 互換で同じ発想を展開する
+
+**完了条件**:
+- [x] webpack で css`` の抽出・ゼロランタイムが動く（@best-css/webpack-loader、実ビルドテストで検証）
+- [ ] Next.js（Turbopack）の example で動く（`turbopack.rules` + `as: '*.css'` の検証）
+- [ ] loader 版のサイズ最適化（クラス名短縮・重複排除）の要否判断と実装
 
 ## マイルストーン
 
@@ -89,7 +94,8 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 | M5 | サイズ最適化の技術検証（Phase 2） | ✅ 完了（宣言単位共有のみ保留として切り出し） |
 | M5.5 | SSR 対応スイート（keyframes / sourcemap / ssr オプション / ルート分割） | ✅ 完了 |
 | M6 | 実プロジェクトへの導入開始（Phase 3） | ⬜ 未着手（導入先の決定待ち） |
-| M7 | Vite 以外のビルド環境の技術検証（Phase 4） | ⬜ 未着手 |
+| M7 | Vite 以外のビルド環境の技術検証（Phase 4） | 🟦 進行中（webpack loader 実証済み） |
+| M8 | Next.js（Turbopack）example | ⬜ 未着手 |
 
 ## 計画の見直しトリガー
 

@@ -1,0 +1,33 @@
+{
+  "name": "@best-css/webpack-loader",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./css": {
+      "types": "./dist/css.d.ts",
+      "default": "./dist/css.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@best-css/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0",
+    "css-loader": "^7.1.4",
+    "mini-css-extract-plugin": "^2.10.2",
+    "typescript": "^6.0.3",
+    "webpack": "^5.108.3"
+  }
+}
