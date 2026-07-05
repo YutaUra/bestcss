@@ -72,7 +72,7 @@ bestCss({ layers: ["base", "components", "utilities"] })
 const bad = css`color: ${color};`;
 ```
 
-ランタイム動的スタイルは設計上サポートしない。動的な値は CSS カスタムプロパティで表現する:
+ランタイム動的スタイルは設計上サポートしない。動的な値は CSS カスタムプロパティで表現する（状態セレクタ・クラス合成・data 属性を含めた使い分けは [動的なスタイルの 4 パターン](./06-dynamic-styles.md) を参照）:
 
 ```tsx
 const box = css`background: var(--box-color);`;

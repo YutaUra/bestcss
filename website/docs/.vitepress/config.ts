@@ -23,6 +23,7 @@ const jaSidebar = [
       },
       { text: "エディタとツールチェーン", link: "/core/04-tooling" },
       { text: "CSS 変数とデザイントークン", link: "/core/05-css-variables" },
+      { text: "動的なスタイルの 4 パターン", link: "/core/06-dynamic-styles" },
     ],
   },
   {
@@ -58,6 +59,7 @@ const enSidebar = [
       },
       { text: "Editor & Toolchain", link: "/en/core/04-tooling" },
       { text: "CSS Variables & Design Tokens", link: "/en/core/05-css-variables" },
+      { text: "Dynamic Styling Patterns", link: "/en/core/06-dynamic-styles" },
     ],
   },
   {

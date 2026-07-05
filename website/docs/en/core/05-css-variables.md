@@ -102,7 +102,7 @@ const bar = css`
 />;
 ```
 
-Static tokens (`--color-primary`) and dynamic values (`--progress`) ride the same mechanism, so inside css`` you never think about where build time ends and runtime begins. Put a fallback on the dynamic side only, and a missed injection won't break layout.
+Note that CSS variables are not the only tool for dynamic styling (for choosing between state selectors, class composition, and data attributes, see [The 4 Patterns of Dynamic Styling](/en/core/06-dynamic-styles)). Static tokens (`--color-primary`) and dynamic values (`--progress`) ride the same mechanism, so inside css`` you never think about where build time ends and runtime begins. Put a fallback on the dynamic side only, and a missed injection won't break layout.
 
 ## Related pages
 

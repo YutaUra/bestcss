@@ -72,7 +72,7 @@ Plain css`` (unlayered) still beats every layer, as before. We deliberately did 
 const bad = css`color: ${color};`;
 ```
 
-Runtime dynamic styles are unsupported by design. Express dynamic values with CSS custom properties:
+Runtime dynamic styles are unsupported by design. Express dynamic values with CSS custom properties (for choosing between this, state selectors, class composition, and data attributes, see [The 4 Patterns of Dynamic Styling](/en/core/06-dynamic-styles)):
 
 ```tsx
 const box = css`background: var(--box-color);`;
