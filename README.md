@@ -63,7 +63,15 @@ bestcss に関する作業の前に、`node_modules/@bestcss/core/docs/`（文�
 
 `BEGIN` / `END` マーカーの外側には自由にプロジェクト固有の指示を書いてよい。Claude Code の場合は `CLAUDE.md` に `@AGENTS.md` と書けば同じ指示が読み込まれる。
 
-> **Status**: Phase 1（MVP）完了。Vite + React で css タグの抽出・HMR まで動作する。npm 未公開のため、試すには本リポジトリの examples を使う。進捗は [docs/plan.md](docs/plan.md) を参照。
+> **Status**: v0.1.0 を npm に公開済み（[@bestcss/core](https://www.npmjs.com/package/@bestcss/core) / [@bestcss/vite-plugin](https://www.npmjs.com/package/@bestcss/vite-plugin) / [@bestcss/webpack-loader](https://www.npmjs.com/package/@bestcss/webpack-loader)）。進捗は [docs/plan.md](docs/plan.md) を参照。
+
+## インストール
+
+```sh
+pnpm add @bestcss/core
+pnpm add -D @bestcss/vite-plugin    # Vite の場合
+pnpm add -D @bestcss/webpack-loader # webpack / Next.js の場合
+```
 
 ## 試す
 
