@@ -206,7 +206,9 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
    * 仮想 CSS の内容を（未変換ならオンデマンドに変換して）取得する。
    * mtime で鮮度を確認するため、dev の編集にも追従する
    */
-  const ensureCssEntry = (base: string): { css: string; map: string } | null => {
+  const ensureCssEntry = (
+    base: string,
+  ): { css: string; map: string } | null => {
     const sourceFile = base.slice(0, -VIRTUAL_CSS_SUFFIX.length);
     const entry = extractedCss.get(base);
     if (!fs.existsSync(sourceFile)) {
@@ -680,47 +682,67 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
               }
             }
           }
-        } else if (minifyClassNames && generatedClassNames.size > 0) {
-          // 使用頻度は JS チャンク内の静的な出現回数を代理指標にする。
-          // 実行時の描画回数は分からないが、全クラスが 1〜3 文字になるため
-          // 順位の精度がサイズに与える影響は小さい
-          const frequencies = new Map<string, number>(
-            [...generatedClassNames].map((name) => [name, 0]),
-          );
-          for (const output of Object.values(bundle)) {
-            if (output.type !== "chunk") {
-              continue;
-            }
-            for (const matched of output.code.matchAll(/\bbc[a-z0-9]+\b/g)) {
-              const count = frequencies.get(matched[0]);
-              if (count !== undefined) {
-                frequencies.set(matched[0], count + 1);
+        } else if (minifyClassNames) {
+          // 短縮対象は自前生成のクラス名に加え、CSS アセットのセレクタ
+          // （.bc...）からも収穫する。プリコンパイル配布されたライブラリは
+          // bc 名のまま出荷される（作者側は minifyClassNames: false）ため、
+          // アセットから拾わないと利用側ビルドで短縮されずに残る。
+          // webpack プラグインと同じ自己完結方式
+          const knownNames = new Set(generatedClassNames);
+          for (const [fileName, output] of Object.entries(bundle)) {
+            if (output.type === "asset" && fileName.endsWith(".css")) {
+              for (const matched of String(output.source).matchAll(
+                /\.(bc[a-z0-9]+)/g,
+              )) {
+                knownNames.add(matched[1] as string);
               }
             }
           }
-
-          renameMap = createRenameMap(frequencies);
-          for (const [fileName, output] of Object.entries(bundle)) {
-            if (output.type === "chunk") {
-              output.code = applyRename(output.code, renameMap);
-            } else if (fileName.endsWith(".css")) {
-              output.source = applyRename(String(output.source), renameMap);
-            }
-          }
-
-          // 確定した表を書き出し、後続のサーバービルドに共有する。
-          // 「CSS を持つ環境」に限定する理由: SSG 等が走らせる空の
-          // クライアント環境が、確定済みの表を上書きするのを防ぐため
-          const mapPath = renameMapPath();
-          const hasCss =
-            routeStyledFiles.size > 0 ||
-            Object.keys(bundle).some((fileName) => fileName.endsWith(".css"));
-          if (mapPath !== null && hasCss) {
-            fs.mkdirSync(path.dirname(mapPath), { recursive: true });
-            fs.writeFileSync(
-              mapPath,
-              JSON.stringify(Object.fromEntries(renameMap), null, 2),
+          if (knownNames.size === 0) {
+            // 何も生成していないビルド（SSG の空クライアント環境など）は
+            // 短縮をスキップするだけで、後続のルート CSS emit は行う
+          } else {
+            // 使用頻度は JS チャンク内の静的な出現回数を代理指標にする。
+            // 実行時の描画回数は分からないが、全クラスが 1〜3 文字になるため
+            // 順位の精度がサイズに与える影響は小さい
+            const frequencies = new Map<string, number>(
+              [...knownNames].map((name) => [name, 0]),
             );
+            for (const output of Object.values(bundle)) {
+              if (output.type !== "chunk") {
+                continue;
+              }
+              for (const matched of output.code.matchAll(/\bbc[a-z0-9]+\b/g)) {
+                const count = frequencies.get(matched[0]);
+                if (count !== undefined) {
+                  frequencies.set(matched[0], count + 1);
+                }
+              }
+            }
+
+            renameMap = createRenameMap(frequencies);
+            for (const [fileName, output] of Object.entries(bundle)) {
+              if (output.type === "chunk") {
+                output.code = applyRename(output.code, renameMap);
+              } else if (fileName.endsWith(".css")) {
+                output.source = applyRename(String(output.source), renameMap);
+              }
+            }
+
+            // 確定した表を書き出し、後続のサーバービルドに共有する。
+            // 「CSS を持つ環境」に限定する理由: SSG 等が走らせる空の
+            // クライアント環境が、確定済みの表を上書きするのを防ぐため
+            const mapPath = renameMapPath();
+            const hasCss =
+              routeStyledFiles.size > 0 ||
+              Object.keys(bundle).some((fileName) => fileName.endsWith(".css"));
+            if (mapPath !== null && hasCss) {
+              fs.mkdirSync(path.dirname(mapPath), { recursive: true });
+              fs.writeFileSync(
+                mapPath,
+                JSON.stringify(Object.fromEntries(renameMap), null, 2),
+              );
+            }
           }
         }
 

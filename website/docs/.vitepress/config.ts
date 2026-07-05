@@ -66,6 +66,7 @@ const jaSidebar = [
     items: [
       { text: "セットアップとオプション", link: "/vite/" },
       { text: "SSR / MPA 統合", link: "/vite/01-ssr" },
+      { text: "ライブラリ配布", link: "/vite/02-library" },
     ],
   },
   {
@@ -102,6 +103,7 @@ const enSidebar = [
     items: [
       { text: "Setup & Options", link: "/en/vite/" },
       { text: "SSR / MPA Integration", link: "/en/vite/01-ssr" },
+      { text: "Library Distribution", link: "/en/vite/02-library" },
     ],
   },
   {

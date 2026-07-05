@@ -79,6 +79,10 @@ Extracted CSS rides Vite's chunk graph, so standard Vite chunk controls apply:
 - Only files importing `css` from `@bestcss/core` are transformed
 - "css`` was called at runtime" means code ran without the plugin (plain Vitest, etc.) — see the test setup above
 
+## Distributing component libraries
+
+For publishing a bestcss-based UI library to npm, precompiled distribution is recommended. See [Distributing Component Libraries](/en/vite/02-library).
+
 ## Limitation: packages that declare sideEffects: false
 
 Injected CSS imports are side-effect imports, so inside a package declaring `"sideEffects": false` (component libraries, etc.) they get tree-shaken away. Declare CSS as a side effect:
