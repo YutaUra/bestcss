@@ -71,7 +71,14 @@ jobs:
         run: |
           VERSION="${{ steps.version.outputs.version }}"
           for p in core vite-plugin webpack-loader; do
-            LATEST=$(npm view "@bestcss/$p" dist-tags.latest)
+            # publish 直後の npm view は反映遅延で古い値を返すことがある
+            # （v0.1.3 で実際に発生）ため、リトライしてから失敗にする
+            for i in 1 2 3 4 5 6; do
+              LATEST=$(npm view "@bestcss/$p" dist-tags.latest)
+              [ "$LATEST" = "$VERSION" ] && break
+              echo "@bestcss/$p の latest はまだ $LATEST（期待: $VERSION）。リトライ $i/6"
+              sleep 10
+            done
             if [ "$LATEST" != "$VERSION" ]; then
               echo "::error::@bestcss/$p の latest が $LATEST（期待: $VERSION）" && exit 1
             fi
