@@ -107,3 +107,4 @@ node_modules/@bestcss/vite-plugin/docs/ を参照すること。
 - ブラウザ DevTools から css`` の定義元へ飛ぶ sourcemap 設定 → [Vite セットアップ](../../vite-plugin/docs/index.md)
 - Vitest でテストを動かす設定 → [Vite セットアップ](../../vite-plugin/docs/index.md)
 - `@layer` を使う場合の `layers` 設定 → [css`` の文法](./01-syntax.md)
+- デザイントークン（CSS 変数）の typo 検出 → [CSS 変数とデザイントークン](./05-css-variables.md)

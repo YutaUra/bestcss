@@ -107,3 +107,4 @@ and node_modules/@bestcss/vite-plugin/docs/.
 - Sourcemap setup for jumping from browser DevTools to the css`` source → [Vite setup](/en/vite/)
 - Running tests with Vitest → [Vite setup](/en/vite/)
 - The `layers` option required for `@layer` → [css`` syntax](/en/core/01-syntax)
+- Typo detection for design tokens (CSS variables) → [CSS Variables & Design Tokens](/en/core/05-css-variables)

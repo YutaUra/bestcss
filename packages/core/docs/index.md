@@ -10,6 +10,7 @@ bestcss は「ゼロランタイム × コロケーション × 生 CSS 文法 �
 2. [内部のしくみ（クラス名・最適化・デバッグ）](./02-how-it-works.md)
 3. [Tailwind / UnoCSS からの移行](./03-migrate-from-utility-frameworks.md)
 4. [エディタとツールチェーンの活用](./04-tooling.md)
+5. [CSS 変数とデザイントークン](./05-css-variables.md)
 
 ## バンドラー統合のドキュメント
 

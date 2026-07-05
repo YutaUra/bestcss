@@ -22,6 +22,7 @@ const jaSidebar = [
         link: "/core/03-migrate-from-utility-frameworks",
       },
       { text: "エディタとツールチェーン", link: "/core/04-tooling" },
+      { text: "CSS 変数とデザイントークン", link: "/core/05-css-variables" },
     ],
   },
   {
@@ -56,6 +57,7 @@ const enSidebar = [
         link: "/en/core/03-migrate-from-utility-frameworks",
       },
       { text: "Editor & Toolchain", link: "/en/core/04-tooling" },
+      { text: "CSS Variables & Design Tokens", link: "/en/core/05-css-variables" },
     ],
   },
   {
