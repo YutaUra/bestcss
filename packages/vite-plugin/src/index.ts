@@ -6,6 +6,7 @@ import {
   createRenameMap,
   dedupeCss,
   generateClassName,
+  minifyCss,
   transform,
 } from "@bestcss/core";
 import type { Plugin } from "vite";
@@ -18,13 +19,6 @@ const TRANSFORM_TARGET_RE = /\.[jt]sx?$/;
  * （postcss / minify / コード分割）にそのまま処理を委ねられる
  */
 const VIRTUAL_CSS_SUFFIX = ".bestcss.css";
-
-/**
- * ルート単位のスタイル収集エントリ（仮想モジュール）の接頭辞。
- * ルートファイルの import グラフ上の css`` を side-effect import として
- * 集めた「スタイルだけのエントリ」を表す
- */
-const VIRTUAL_ROUTE_PREFIX = "\0bestcss-route:";
 
 /** ルート → CSS ファイル一覧の対応表（ビルド時にインラインされる） */
 const VIRTUAL_ROUTE_MANIFEST = "virtual:bestcss/route-css";
@@ -99,6 +93,8 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
   /** 遅延ロードした仮想 CSS の鮮度管理（ソースの mtime） */
   const sourceMtimes = new Map<string, number>();
   const generatedClassNames = new Set<string>();
+  /** ルートキー → そのルートの import グラフ上の styled ファイル一覧 */
+  const routeStyledFiles = new Map<string, string[]>();
   let root = process.cwd();
   let isProduction = false;
   let sharedRenameMap: Map<string, string> | null = null;
@@ -181,67 +177,117 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     return styledFiles;
   };
 
-  /** チャンクとその static import 先が参照する CSS アセット名を集める */
-  const collectChunkCss = (
-    fileName: string,
-    bundle: Record<string, unknown>,
-    seen: Set<string>,
-  ): string[] => {
-    if (seen.has(fileName)) {
-      return [];
+  /**
+   * 仮想 CSS の内容を（未変換ならオンデマンドに変換して）取得する。
+   * mtime で鮮度を確認するため、dev の編集にも追従する
+   */
+  const ensureCssEntry = (base: string): { css: string; map: string } | null => {
+    const sourceFile = base.slice(0, -VIRTUAL_CSS_SUFFIX.length);
+    const entry = extractedCss.get(base);
+    if (!fs.existsSync(sourceFile)) {
+      return entry ?? null;
     }
-    seen.add(fileName);
-    const output = bundle[fileName] as
-      | {
-          type: string;
-          imports?: string[];
-          viteMetadata?: { importedCss?: Set<string> };
-        }
-      | undefined;
-    if (output === undefined || output.type !== "chunk") {
-      return [];
+    const mtime = fs.statSync(sourceFile).mtimeMs;
+    if (entry !== undefined && sourceMtimes.get(base) === mtime) {
+      return entry;
     }
-    const css = [...(output.viteMetadata?.importedCss ?? [])];
-    for (const imported of output.imports ?? []) {
-      css.push(...collectChunkCss(imported, bundle, seen));
+    const result = transform(fs.readFileSync(sourceFile, "utf8"), {
+      filename: sourceFile,
+    });
+    sourceMtimes.set(base, mtime);
+    if (result === null) {
+      // @bestcss/core を import していても css`` がないファイル
+      return null;
     }
-    return css;
+    const fresh = { css: result.css, map: result.cssMap };
+    extractedCss.set(base, fresh);
+    for (const className of result.classNames) {
+      generatedClassNames.add(className);
+    }
+    return fresh;
   };
 
   /**
-   * ルート → CSS ファイル一覧の対応表を書き出し、スタイル収集用の
-   * 仮想エントリ（空の JS チャンク）を成果物から取り除く
+   * ルート単位の CSS アセットを「共有シグネチャ」でグループ化して自前 emit し、
+   * ルート → CSS ファイル一覧の対応表を書き出す。
+   *
+   * チャンクグラフ（viteMetadata / imports の走査）から導出しない理由:
+   * 空 JS のスタイルエントリは Vite の pure-CSS チャンク処理で統合・除去され、
+   * 「どのルートがこの CSS を必要とするか」の情報がバージョン依存の挙動で
+   * 消えるため（issue #2: Vite 6 で共有 CSS が 1 ルートに誤帰属）。
+   * ルート → styled モジュールの対応はプラグイン自身が知っているので、
+   * それだけを情報源にする
    */
-  const writeRouteCssManifest = (bundle: Record<string, unknown>): void => {
-    const routesDir = routesDirPath();
-    if (routesDir === null) {
+  const emitRouteCssAssets = (
+    ctx: {
+      emitFile: (file: {
+        type: "asset";
+        fileName: string;
+        source: string;
+      }) => string;
+    },
+    bundle: Record<string, unknown>,
+    renameMap: Map<string, string> | null,
+  ): void => {
+    if (routesDirPath() === null || routeStyledFiles.size === 0) {
       return;
     }
+    // 同じルート集合から参照されるモジュールを 1 アセットにまとめる。
+    // 全ルート共有なら 1 ファイル（キャッシュ効率）、ルート専用なら
+    // そのルートだけのファイルになり、fan-out と共有バケットを兼ねる
+    const routesByFile = new Map<string, Set<string>>();
+    for (const [routeKey, files] of routeStyledFiles) {
+      for (const file of files) {
+        const routes = routesByFile.get(file) ?? new Set<string>();
+        routes.add(routeKey);
+        routesByFile.set(file, routes);
+      }
+    }
+    const groups = new Map<string, { routes: string[]; files: string[] }>();
+    for (const [file, routes] of routesByFile) {
+      const sortedRoutes = [...routes].sort();
+      const signature = sortedRoutes.join("\n");
+      const group = groups.get(signature) ?? {
+        routes: sortedRoutes,
+        files: [],
+      };
+      group.files.push(file);
+      groups.set(signature, group);
+    }
+
     const manifest: Record<string, string[]> = {};
-    let found = false;
-    for (const [fileName, output] of Object.entries(bundle)) {
-      const chunk = output as { type: string; facadeModuleId?: string | null };
-      if (
-        chunk.type !== "chunk" ||
-        !chunk.facadeModuleId?.startsWith(VIRTUAL_ROUTE_PREFIX)
-      ) {
+    for (const routeKey of routeStyledFiles.keys()) {
+      manifest[routeKey] = [];
+    }
+    for (const group of groups.values()) {
+      const cssText = dedupeCss(
+        group.files
+          .sort()
+          .map((file) => ensureCssEntry(file + VIRTUAL_CSS_SUFFIX)?.css ?? "")
+          .filter((css) => css !== "")
+          .join("\n"),
+      );
+      if (cssText.trim() === "") {
         continue;
       }
-      found = true;
-      const routeFile = chunk.facadeModuleId.slice(VIRTUAL_ROUTE_PREFIX.length);
-      const routeKey = path
-        .relative(routesDir, routeFile)
-        .replace(/\.[jt]sx?$/, "");
-      manifest[routeKey] = [
-        ...new Set(collectChunkCss(fileName, bundle, new Set())),
-      ];
-      delete bundle[fileName];
+      // emitFile したアセットは同一 handler 内の bundle 走査に現れないため、
+      // クラス名短縮は emit 前にここで適用する（表は呼び出し側で確定済み）
+      let minified = minifyCss(cssText);
+      if (renameMap !== null) {
+        minified = applyRename(minified, renameMap);
+      }
+      const fileName = `assets/bestcss.${generateClassName(minified)}.css`;
+      if (!(fileName in bundle)) {
+        ctx.emitFile({ type: "asset", fileName, source: minified });
+      }
+      for (const routeKey of group.routes) {
+        manifest[routeKey]?.push(fileName);
+      }
     }
-    if (found) {
-      const manifestPath = routeManifestPath();
-      fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
-      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
-    }
+
+    const manifestPath = routeManifestPath();
+    fs.mkdirSync(path.dirname(manifestPath), { recursive: true });
+    fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
   };
 
   return {
@@ -268,7 +314,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       isProduction = config.isProduction;
     },
 
-    buildStart() {
+    async buildStart() {
       const routesDir = routesDirPath();
       if (routesDir === null) {
         return;
@@ -284,9 +330,9 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           };
         }
       ).environment;
-      // スタイルエントリは「CSS を出力するクライアントの本番ビルド」にだけ
-      // 注入する。input 未定義の環境を除外するのは、SSG 等がビルド中に
-      // 走らせる空のクライアント環境（成果物と manifest を汚す）を避けるため
+      // ルート → styled ファイルの収集は「CSS を出力するクライアントの
+      // 本番ビルド」でだけ行う。input 未定義の環境を除外するのは、SSG 等が
+      // ビルド中に走らせる空のクライアント環境（manifest を汚す）を避けるため
       const input = environment?.config?.build?.rollupOptions?.input;
       const hasInput = Array.isArray(input)
         ? input.length > 0
@@ -302,15 +348,15 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       ) {
         return;
       }
+      routeStyledFiles.clear();
       for (const routeFile of walkDir(routesDir)) {
         const routeKey = path
           .relative(routesDir, routeFile)
           .replace(/\.[jt]sx?$/, "");
-        this.emitFile({
-          type: "chunk",
-          id: VIRTUAL_ROUTE_PREFIX + routeFile,
-          name: `bestcss-route/${routeKey}`,
-        });
+        routeStyledFiles.set(
+          routeKey,
+          await collectStyledFiles(this, routeFile),
+        );
       }
     },
 
@@ -328,9 +374,6 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       }
       if (source === VIRTUAL_DEV_STYLES) {
         return asSideEffect(RESOLVED_DEV_STYLES);
-      }
-      if (source.startsWith(VIRTUAL_ROUTE_PREFIX)) {
-        return source;
       }
       // 仮想 CSS モジュールはファイルシステムに存在しないため、
       // 他のリゾルバに渡さずここで解決を確定させる
@@ -386,48 +429,19 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         );
       }
 
-      if (id.startsWith(VIRTUAL_ROUTE_PREFIX)) {
-        // ルートの import グラフを辿り、css`` を含むファイルの仮想 CSS を
-        // side-effect import するだけのモジュールを生成する。
-        // ルート専用/共有の分割判断は Vite のチャンク分割に委ねる
-        const routeFile = id.slice(VIRTUAL_ROUTE_PREFIX.length);
-        const styledFiles = await collectStyledFiles(this, routeFile);
-        return (
-          styledFiles
-            .map((f) => `import ${JSON.stringify(f + VIRTUAL_CSS_SUFFIX)};`)
-            .join("\n") + "\nexport {};\n"
-        );
-      }
-
       const base = stripQuery(id);
       if (!base.endsWith(VIRTUAL_CSS_SUFFIX)) {
         return null;
       }
-      const sourceFile = base.slice(0, -VIRTUAL_CSS_SUFFIX.length);
-      let entry = extractedCss.get(base);
-      // ソースを JS として import しない利用（routeStyles / dev-styles）でも
-      // 内容が新しくなるよう、mtime で鮮度を確認してオンデマンドに変換する
-      if (fs.existsSync(sourceFile)) {
-        const mtime = fs.statSync(sourceFile).mtimeMs;
-        if (entry === undefined || sourceMtimes.get(base) !== mtime) {
-          const result = transform(fs.readFileSync(sourceFile, "utf8"), {
-            filename: sourceFile,
-          });
-          sourceMtimes.set(base, mtime);
-          if (result === null) {
-            // @bestcss/core を import していても css`` がないファイルは
-            // 空の CSS として扱う（ENOENT でビルドを壊さない）
-            return "";
-          }
-          entry = { css: result.css, map: result.cssMap };
-          extractedCss.set(base, entry);
-          for (const className of result.classNames) {
-            generatedClassNames.add(className);
-          }
-        }
-      }
-      if (entry === undefined) {
-        return null;
+      // ソースを JS として import しない利用（dev-styles 等）でも内容が
+      // 新しくなるよう、mtime で鮮度を確認してオンデマンドに変換する
+      const entry = ensureCssEntry(base);
+      if (entry === null) {
+        // @bestcss/core を import していても css`` がないファイルは
+        // 空の CSS として扱う（ENOENT でビルドを壊さない）
+        return fs.existsSync(base.slice(0, -VIRTUAL_CSS_SUFFIX.length))
+          ? ""
+          : null;
       }
       // map を添えることで、css.devSourcemap 有効時に DevTools の Styles
       // ペインから元の tsx（css`` の位置）へ辿れるようになる。
@@ -518,78 +532,80 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           }
         }
 
-        writeRouteCssManifest(bundle);
-
-        if (!minifyClassNames) {
-          return;
+        // ルート単位 CSS の全クラス名を、リネーム表の計算より前に登録する。
+        // ルート専用モジュールはクライアントの JS グラフに入らないため、
+        // ここで変換しておかないと表から漏れて短縮の対象外になってしまう
+        for (const files of routeStyledFiles.values()) {
+          for (const file of files) {
+            ensureCssEntry(file + VIRTUAL_CSS_SUFFIX);
+          }
         }
 
         const consumer = (
           this as { environment?: { config?: { consumer?: string } } }
         ).environment?.config?.consumer;
 
-        if (consumer === "server") {
+        let renameMap: Map<string, string> | null = null;
+
+        if (minifyClassNames && consumer === "server") {
           // サーバービルドは自分の頻度で短縮しない。CSS を持つのは
           // クライアントビルドであり、独立に計算した短縮名は一致しないため。
           // ssr 設定時のみ、共有された表に従って書き換える（transform 時に
           // 適用済みだが、バンドル型 SSR での取りこぼしをここで拾う）
-          if (ssr === null) {
-            return;
-          }
-          const sharedMap = loadSharedRenameMap();
-          for (const output of Object.values(bundle)) {
-            if (output.type === "chunk") {
-              output.code = applyRename(output.code, sharedMap);
+          if (ssr !== null) {
+            const sharedMap = loadSharedRenameMap();
+            for (const output of Object.values(bundle)) {
+              if (output.type === "chunk") {
+                output.code = applyRename(output.code, sharedMap);
+              }
             }
           }
-          return;
-        }
-
-        if (generatedClassNames.size === 0) {
-          return;
-        }
-
-        // 使用頻度は JS チャンク内の静的な出現回数を代理指標にする。
-        // 実行時の描画回数は分からないが、全クラスが 1〜3 文字になるため
-        // 順位の精度がサイズに与える影響は小さい
-        const frequencies = new Map<string, number>(
-          [...generatedClassNames].map((name) => [name, 0]),
-        );
-        for (const output of Object.values(bundle)) {
-          if (output.type !== "chunk") {
-            continue;
-          }
-          for (const matched of output.code.matchAll(/\bbc[a-z0-9]+\b/g)) {
-            const count = frequencies.get(matched[0]);
-            if (count !== undefined) {
-              frequencies.set(matched[0], count + 1);
-            }
-          }
-        }
-
-        const renameMap = createRenameMap(frequencies);
-        for (const [fileName, output] of Object.entries(bundle)) {
-          if (output.type === "chunk") {
-            output.code = applyRename(output.code, renameMap);
-          } else if (fileName.endsWith(".css")) {
-            output.source = applyRename(String(output.source), renameMap);
-          }
-        }
-
-        // 確定した表を書き出し、後続のサーバービルドに共有する。
-        // CSS アセットを持つ環境に限定する理由: SSG 等が走らせる空の
-        // クライアント環境が、確定済みの表を上書きするのを防ぐため
-        const mapPath = renameMapPath();
-        const hasCssAsset = Object.keys(bundle).some((fileName) =>
-          fileName.endsWith(".css"),
-        );
-        if (mapPath !== null && hasCssAsset) {
-          fs.mkdirSync(path.dirname(mapPath), { recursive: true });
-          fs.writeFileSync(
-            mapPath,
-            JSON.stringify(Object.fromEntries(renameMap), null, 2),
+        } else if (minifyClassNames && generatedClassNames.size > 0) {
+          // 使用頻度は JS チャンク内の静的な出現回数を代理指標にする。
+          // 実行時の描画回数は分からないが、全クラスが 1〜3 文字になるため
+          // 順位の精度がサイズに与える影響は小さい
+          const frequencies = new Map<string, number>(
+            [...generatedClassNames].map((name) => [name, 0]),
           );
+          for (const output of Object.values(bundle)) {
+            if (output.type !== "chunk") {
+              continue;
+            }
+            for (const matched of output.code.matchAll(/\bbc[a-z0-9]+\b/g)) {
+              const count = frequencies.get(matched[0]);
+              if (count !== undefined) {
+                frequencies.set(matched[0], count + 1);
+              }
+            }
+          }
+
+          renameMap = createRenameMap(frequencies);
+          for (const [fileName, output] of Object.entries(bundle)) {
+            if (output.type === "chunk") {
+              output.code = applyRename(output.code, renameMap);
+            } else if (fileName.endsWith(".css")) {
+              output.source = applyRename(String(output.source), renameMap);
+            }
+          }
+
+          // 確定した表を書き出し、後続のサーバービルドに共有する。
+          // 「CSS を持つ環境」に限定する理由: SSG 等が走らせる空の
+          // クライアント環境が、確定済みの表を上書きするのを防ぐため
+          const mapPath = renameMapPath();
+          const hasCss =
+            routeStyledFiles.size > 0 ||
+            Object.keys(bundle).some((fileName) => fileName.endsWith(".css"));
+          if (mapPath !== null && hasCss) {
+            fs.mkdirSync(path.dirname(mapPath), { recursive: true });
+            fs.writeFileSync(
+              mapPath,
+              JSON.stringify(Object.fromEntries(renameMap), null, 2),
+            );
+          }
         }
+
+        // ルート単位 CSS の emit はリネーム表の確定後に行う（表を適用して出力）
+        emitRouteCssAssets(this, bundle, renameMap);
       },
     },
   };

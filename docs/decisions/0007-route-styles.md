@@ -1,6 +1,6 @@
 # ADR-0007: SSR でのルート単位 CSS 分割はスタイルエントリの注入で行う
 
-- **Status**: Accepted
+- **Status**: Accepted（manifest の導出方式は [ADR-0011](0011-route-css-self-emission.md) で置き換え）
 - **Date**: 2026-07-05
 - **Deciders**: yutaura
 

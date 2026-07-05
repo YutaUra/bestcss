@@ -52,3 +52,20 @@ import "virtual:bestcss/dev-styles";
 ## リネーム表を使わない選択肢
 
 `minifyClassNames: false` にすると内容ハッシュ名（`bc...`）のまま出力される。内容ハッシュは独立したビルド間でも決定的に一致するため、表の共有なしで HTML と CSS が一致する（[core: 内部のしくみ](../../core/docs/02-how-it-works.md) 参照）。
+
+## routesDir を使わない場合の CSS 配信（ssr: true のみ）
+
+ルート単位分割が不要なら、CSS はクライアントビルドの通常のグラフから出力される。スタイルは islands などクライアントに入るモジュール経由で収集されるため、ルート専用モジュールのスタイルはクライアントエントリから side-effect import で集める。`<link>` は出力名を固定して張るのが簡単:
+
+```ts
+// vite.config.ts（client）
+build: {
+  cssCodeSplit: false,
+  rollupOptions: { output: { assetFileNames: "static/assets/[name].[ext]" } },
+}
+```
+
+```tsx
+// renderer（本番のみ）
+<link href="/static/assets/style.css" rel="stylesheet" />
+```
