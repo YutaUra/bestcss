@@ -93,6 +93,23 @@ Language-service plugins don't affect `tsc` builds (editor experience only). Bui
 
 Biome (as of 2.5) **does not format embedded CSS inside tagged templates** (css`` contents are left untouched — never mangled). If you want Biome for JS/TS formatting plus formatted css``, run Prettier alongside as the CSS formatter, or skip embedded-CSS formatting and rely on stylelint for linting only.
 
+## Test runners (Jest / node:test / ...)
+
+Vitest is Vite-based, so just add the plugin ([Vite setup](/en/vite/)). For **runners without a build transform** (Jest, node:test, bun test, ...), swap in the test-only css`` implementation `@bestcss/core/testing`:
+
+```js
+// jest.config.js
+export default {
+  moduleNameMapper: {
+    "^@bestcss/core$": "@bestcss/core/testing",
+  },
+};
+```
+
+The testing css`` computes class names with the same steps as the production transform (keyframes scoping → content hash), so **single-block class names match the production build** (snapshots stay consistent across environments). It only ever runs inside the test process, so the zero-runtime principle is not violated.
+
+Limitation: animation-reference resolution is confined to the block, so class names diverge from production only when referencing @keyframes defined in another block.
+
 ## AI coding agents
 
 Each bestcss package ships this entire docs directory inside the npm package. Point agents at `node_modules/@bestcss/*/docs/` instead of their training data, so they work from **information that always matches the installed version**. A single line in your project's CLAUDE.md or AGENTS.md does it:

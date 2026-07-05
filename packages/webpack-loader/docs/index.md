@@ -89,6 +89,10 @@ browserslist クエリを渡すと、ネストのフラット化とベンダー�
 use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
 ```
 
+## テスト（Jest）
+
+Jest はビルド変換を通さないため、`@bestcss/core/testing` へ差し替える（詳細は [core: エディタとツールチェーンの活用](../../core/docs/04-tooling.md)）。
+
 ## 制限
 
 - **Turbopack ではサイズ最適化（クラス名短縮・CSS 重複排除）が使えない** — Turbopack にはアセット後処理のフック（webpack の processAssets 相当）が存在しないため。内容ハッシュ名（`bc...`、9 文字程度）のまま配信される。抽出・ゼロランタイムは動作する

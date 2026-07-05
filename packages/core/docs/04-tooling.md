@@ -93,6 +93,23 @@ pnpm add -D typescript-styled-plugin
 
 Biome（2.5 時点）は **タグ付きテンプレート内の埋め込み CSS を整形しない**（css`` の中身は触らずに残る。壊すことはない）。JS/TS の整形を Biome に任せつつ css`` の整形が欲しい場合は、Prettier を CSS 整形係として併用するか、埋め込み CSS の整形は諦めて stylelint のリントだけ効かせる構成になる。
 
+## テストランナー（Jest / node:test など）
+
+Vitest は Vite ベースなのでプラグインを載せるだけでよい（[Vite セットアップ](../../vite-plugin/docs/index.md)）。**ビルド変換を通さないランナー**（Jest、node:test、bun test など）では、テスト専用の css`` 実装 `@bestcss/core/testing` へ差し替える:
+
+```js
+// jest.config.js
+export default {
+  moduleNameMapper: {
+    "^@bestcss/core$": "@bestcss/core/testing",
+  },
+};
+```
+
+testing 版の css`` は本番の変換と同じ手順（keyframes のスコープ化 → 内容ハッシュ）でクラス名を計算するため、**単一ブロックのクラス名は本番ビルドと一致する**（スナップショットが環境間で揃う）。テストプロセス内でだけ実行されるコードなので、ゼロランタイムの原則には反しない。
+
+制限: animation 参照の解決がブロック内に閉じるため、別ブロックで定義した @keyframes を参照する場合のみ本番とクラス名がずれる。
+
 ## AI コーディングエージェント
 
 bestcss の各パッケージは、この docs ディレクトリごと npm パッケージに同梱している。エージェントには学習データではなく `node_modules/@bestcss/*/docs/` を読ませることで、**インストールされているバージョンと常に一致した情報**で作業させられる。プロジェクトの CLAUDE.md や AGENTS.md に一文入れておくとよい:

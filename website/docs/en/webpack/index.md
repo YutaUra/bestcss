@@ -87,6 +87,10 @@ Pass a browserslist query to enable nesting flattening and vendor prefixing (the
 use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
 ```
 
+## Testing (Jest)
+
+Jest doesn't run the build transform, so remap to `@bestcss/core/testing` (see [core: Editor & Toolchain Integration](/en/core/04-tooling)).
+
 ## Limitations
 
 - **Size optimization (class minification / CSS dedup) is unavailable on Turbopack** — it has no post-bundle asset hook (webpack's processAssets equivalent). Content-hash names (`bc...`, ~9 chars) ship instead. Extraction and zero runtime work fine
