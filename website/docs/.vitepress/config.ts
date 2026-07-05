@@ -1,4 +1,39 @@
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import cssLang from "@shikijs/langs/css";
+import jsLang from "@shikijs/langs/javascript";
+import jsxLang from "@shikijs/langs/jsx";
+import scssLang from "@shikijs/langs/scss";
+import tsxLang from "@shikijs/langs/tsx";
+import tsLang from "@shikijs/langs/typescript";
 import { defineConfig } from "vitepress";
+
+// ts / tsx コードブロック内の css`` を CSS としてハイライトするための
+// TextMate injection grammar（vscode-styled-components から vendor。
+// 経緯は ../../syntaxes/README.md を参照）。Shiki は VS Code と同じ
+// 文法エンジンなので、拡張の grammar をそのまま注入できる
+const SYNTAXES = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../../syntaxes",
+);
+const readGrammar = (file: string) =>
+  JSON.parse(fs.readFileSync(path.join(SYNTAXES, file), "utf8"));
+const cssStyledGrammar = {
+  ...readGrammar("css.styled.json"),
+  name: "source.css.styled",
+  // css.styled.json はプロパティ名や値の判定を標準 CSS / SCSS 文法へ
+  // 委譲している（source.css#property-names 等）。VS Code と違い Shiki は
+  // 参照先の文法を自動ロードしないため、明示しないと include が
+  // 解決されず css`` の中身が単色のままになる
+  embeddedLangs: ["css", "scss"],
+};
+const styledInjectionGrammar = {
+  ...readGrammar("styled-components.json"),
+  name: "styled",
+  injectTo: ["source.ts", "source.tsx", "source.js", "source.jsx"],
+  embeddedLangs: ["source.css.styled"],
+};
 
 // GitHub Pages（https://yutaura.github.io/bestcss/）でホストするための base
 const BASE = "/bestcss/";
@@ -78,6 +113,25 @@ const enSidebar = [
 export default defineConfig({
   title: "bestcss",
   base: BASE,
+  markdown: {
+    // 依存言語をすべて highlighter 作成時に渡す理由:
+    // (1) css / scss — css.styled が source.css#property-names 等へ委譲して
+    //     おり、未ロードだと include が解決されず css`` 内が単色になる
+    // (2) ts / tsx / js / jsx — shiki の injection は grammar 生成時に
+    //     一度だけ収集されるため、VitePress の遅延ロード（フェンス初出時に
+    //     loadLanguageSync）では injection が適用されない（実測）。
+    //     作成時に一緒に渡すことで injection 込みで grammar が組まれる
+    languages: [
+      ...cssLang,
+      ...scssLang,
+      ...jsLang,
+      ...jsxLang,
+      ...tsLang,
+      ...tsxLang,
+      cssStyledGrammar,
+      styledInjectionGrammar,
+    ],
+  },
   // 同期スクリプト実行前でも設定ロードが失敗しないように
   ignoreDeadLinks: false,
   locales: {
