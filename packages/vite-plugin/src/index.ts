@@ -8,6 +8,8 @@ import {
   generateClassName,
   minifyCss,
   transform,
+  resolveTargets,
+  type Targets,
 } from "@bestcss/core";
 import type { Plugin } from "vite";
 
@@ -88,6 +90,18 @@ export interface BestCssOptions {
    * @example bestCss({ layers: ["base", "components", "utilities"] })
    */
   layers?: string[];
+  /**
+   * 対応ブラウザの browserslist クエリ。指定するとネストのフラット化や
+   * ベンダープレフィックス付与などのダウンレベルが行われる。
+   *
+   * - 未指定: プロジェクトの browserslist 設定（package.json /
+   *   .browserslistrc）を自動検出する。設定もなければダウンレベルなし
+   *   （書いた生 CSS がそのまま出る、モダンブラウザ前提）
+   * - false: 設定があっても無視してダウンレベルしない
+   *
+   * @example bestCss({ targets: "defaults" })
+   */
+  targets?: string | string[] | false;
 }
 
 export function bestCss(options: BestCssOptions = {}): Plugin {
@@ -107,6 +121,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
   const routeStyledFiles = new Map<string, string[]>();
   let root = process.cwd();
   let isProduction = false;
+  let targets: Targets | undefined;
   let sharedRenameMap: Map<string, string> | null = null;
 
   const renameMapPath = (): string | null =>
@@ -204,6 +219,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     const result = transform(fs.readFileSync(sourceFile, "utf8"), {
       filename: sourceFile,
       layers,
+      targets,
     });
     sourceMtimes.set(base, mtime);
     if (result === null) {
@@ -283,7 +299,9 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       }
       // emitFile したアセットは同一 handler 内の bundle 走査に現れないため、
       // クラス名短縮は emit 前にここで適用する（表は呼び出し側で確定済み）
-      let minified = minifyCss(cssText);
+      // minify にも targets を渡す理由: Lightning CSS はターゲット不明だと
+      // 最新構文への書き換えを行い得るため、変換時のダウンレベルと矛盾させない
+      let minified = minifyCss(cssText, targets);
       if (renameMap !== null) {
         minified = applyRename(minified, renameMap);
       }
@@ -322,6 +340,11 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
 
     configResolved(config) {
       root = config.root;
+      // browserslist の設定探索はプロジェクトルート基準で 1 回だけ行う
+      targets =
+        options.targets === false
+          ? undefined
+          : resolveTargets(options.targets, root);
       // command ではなく isProduction で判定する理由: @hono/vite-ssg は
       // ビルド中に内部のモジュールランナー（command=serve の設定）で
       // configResolved を再度呼ぶため、command はビルド中でも serve に
@@ -504,7 +527,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       if (!TRANSFORM_TARGET_RE.test(id) || id.includes("/node_modules/")) {
         return null;
       }
-      const result = transform(code, { filename: id, layers });
+      const result = transform(code, { filename: id, layers, targets });
       if (result === null) {
         // css`` が全て削除された場合、新しいコードに import が残らないため
         // Vite の HMR prune が古い style 要素を除去する。ここでの後始末は不要

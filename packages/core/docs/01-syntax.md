@@ -63,6 +63,16 @@ bestCss({ layers: ["base", "components", "utilities"] })
 
 未指定の css``（unlayered）は従来どおり全レイヤーに勝つ。JS 側の API（`css.layer()` など）にしていないのは、タグ名が `css` から変わると Prettier / stylelint / エディタ拡張の埋め込み CSS 認識がすべて外れることを実測で確認したため — 生 CSS 構文ならツールチェーンが素通しになる。
 
+## ブラウザ対応（targets）
+
+出力はデフォルトで**書いた生 CSS のまま**（ネストはネイティブ CSS ネストとして出荷される。2023 年以降のベースラインブラウザ前提）。古いブラウザに対応する場合はプラグインの `targets` オプションに browserslist クエリを渡すと、ネストのフラット化とベンダープレフィックス付与が行われる:
+
+```ts
+bestCss({ targets: "defaults" })
+```
+
+`targets` 未指定でもプロジェクトの browserslist 設定（package.json の `browserslist` フィールドや `.browserslistrc`）があれば自動検出する。`targets: false` で自動検出ごと無効化できる。
+
 ## 書けないもの
 
 ### `${}` 補間 — ビルドエラー

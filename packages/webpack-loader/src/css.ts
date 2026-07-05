@@ -1,8 +1,13 @@
 import { transform } from "@bestcss/core";
+import { resolveTargetsCached } from "./resolve-targets.js";
 
 interface LoaderContext {
   resourcePath: string;
-  getOptions?: () => { layers?: string[] };
+  rootContext?: string;
+  getOptions?: () => {
+    layers?: string[];
+    targets?: string | string[] | false;
+  };
 }
 
 /**
@@ -14,9 +19,14 @@ export default function bestCssCssLoader(
   this: LoaderContext,
   source: string,
 ): string {
+  const options = this.getOptions?.() ?? {};
   const result = transform(source, {
     filename: this.resourcePath,
-    layers: this.getOptions?.()?.layers,
+    layers: options.layers,
+    targets: resolveTargetsCached(
+      options.targets,
+      this.rootContext ?? process.cwd(),
+    ),
   });
   // css`` を含まない入力はそのまま返す（冪等）。Turbopack は as: "*.css" の
   // 適用後にルールを再評価することがあり、2 周目の入力は抽出済みの

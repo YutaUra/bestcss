@@ -344,3 +344,44 @@ describe("@layer（カスケードレイヤー）", () => {
     );
   });
 });
+
+describe("ブラウザターゲット（targets）", () => {
+  // Lightning CSS の Targets 形式（バージョンは major << 16）。
+  // Safari 15 はネイティブ CSS ネスト未対応なので、フラット化と
+  // プレフィックス付与の両方を観測できる
+  const SAFARI_15 = { targets: { safari: 15 << 16 } };
+
+  it("targets を指定するとネストがフラット化される", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`padding: 4px; &:hover { padding: 8px; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME, ...SAFARI_15 });
+
+    expect(result?.css).not.toContain("&");
+    expect(result?.css).toMatch(/\.bc\w+:hover\s*\{/);
+  });
+
+  it("targets を指定するとベンダープレフィックスが付与される", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`user-select: none;\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME, ...SAFARI_15 });
+
+    expect(result?.css).toContain("-webkit-user-select");
+  });
+
+  it("targets 未指定ではネストがそのまま出力される（モダンブラウザ前提）", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`padding: 4px; &:hover { padding: 8px; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, { filename: FILENAME });
+
+    expect(result?.css).toContain("&:hover");
+  });
+});

@@ -79,6 +79,14 @@ use: [{ loader: "@bestcss/webpack-loader", options: { layers: ["base", "componen
 new BestCssWebpackPlugin({ layers: ["base", "components", "utilities"] }),
 ```
 
+## Browser support (targets)
+
+Pass a browserslist query to enable nesting flattening and vendor prefixing (the project browserslist config is auto-detected when omitted). Like `layers`, pass the same value to both the loader and the css loader (and to the rule options on Turbopack):
+
+```js
+use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
+```
+
 ## Limitations
 
 - **Size optimization (class minification / CSS dedup) is unavailable on Turbopack** — it has no post-bundle asset hook (webpack's processAssets equivalent). Content-hash names (`bc...`, ~9 chars) ship instead. Extraction and zero runtime work fine

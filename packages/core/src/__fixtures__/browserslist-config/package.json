@@ -1,0 +1,5 @@
+{
+  "name": "browserslist-config-fixture",
+  "private": true,
+  "browserslist": ["safari 15"]
+}

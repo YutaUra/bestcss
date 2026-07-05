@@ -1,5 +1,6 @@
 import path from "node:path";
 import { transform } from "@bestcss/core";
+import { resolveTargetsCached } from "./resolve-targets.js";
 
 export interface BestCssLoaderOptions {
   /**
@@ -19,10 +20,20 @@ export interface BestCssLoaderOptions {
    * "query"）では css loader 側の rule にも同じ options を指定すること
    */
   layers?: string[];
+  /**
+   * 対応ブラウザの browserslist クエリ。指定するとネストのフラット化や
+   * ベンダープレフィックス付与などのダウンレベルが行われる。
+   * 未指定ならプロジェクトの browserslist 設定を自動検出し、
+   * 設定もなければダウンレベルしない（モダンブラウザ前提）。
+   * false で自動検出ごと無効化する。Turbopack（importStyle: "query"）では
+   * css loader 側の rule にも同じ options を指定すること
+   */
+  targets?: string | string[] | false;
 }
 
 interface LoaderContext {
   resourcePath: string;
+  rootContext?: string;
   getOptions?: () => BestCssLoaderOptions;
   callback: (
     error: Error | null,
@@ -47,6 +58,10 @@ export default function bestCssLoader(
   const result = transform(source, {
     filename: this.resourcePath,
     layers: options.layers,
+    targets: resolveTargetsCached(
+      options.targets,
+      this.rootContext ?? process.cwd(),
+    ),
   });
   if (result === null) {
     this.callback(null, source);
@@ -63,12 +78,21 @@ export default function bestCssLoader(
   }
 
   const importStyle = options.importStyle ?? "match-resource";
-  // css loader 側にも layers を伝える（webpack の loader クエリは JSON 形式で
-  // getOptions に渡る）。matchResource 文字列にはオプション指定の口が無いため
+  // css loader 側にも layers / targets を伝える（webpack の loader クエリは
+  // JSON 形式で getOptions に渡る）。matchResource 文字列にはオプション指定の
+  // 口が無いため。targets は解決後の Targets ではなく生のクエリを渡し、
+  // css loader 側で同じ手順（キャッシュ込み）で解決させる
+  const cssLoaderOptions: Record<string, unknown> = {};
+  if (options.layers !== undefined) {
+    cssLoaderOptions["layers"] = options.layers;
+  }
+  if (options.targets !== undefined) {
+    cssLoaderOptions["targets"] = options.targets;
+  }
   const cssLoader =
-    options.layers === undefined
+    Object.keys(cssLoaderOptions).length === 0
       ? "@bestcss/webpack-loader/css"
-      : `@bestcss/webpack-loader/css?${JSON.stringify({ layers: options.layers })}`;
+      : `@bestcss/webpack-loader/css?${JSON.stringify(cssLoaderOptions)}`;
   const cssRequest =
     importStyle === "query"
       ? `./${path.basename(this.resourcePath)}?bestcss`

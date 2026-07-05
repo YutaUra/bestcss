@@ -63,6 +63,16 @@ bestCss({ layers: ["base", "components", "utilities"] })
 
 Plain css`` (unlayered) still beats every layer, as before. We deliberately did not add a JS API like `css.layer()`: changing the tag away from `css` breaks embedded-CSS recognition in Prettier, stylelint, and editor extensions (verified empirically) — plain CSS syntax keeps the whole toolchain working.
 
+## Browser support (targets)
+
+By default the output is **your plain CSS as written** (nesting ships as native CSS nesting — baseline browsers from 2023 onward). To support older browsers, pass a browserslist query to the plugin's `targets` option, which enables nesting flattening and vendor prefixing:
+
+```ts
+bestCss({ targets: "defaults" })
+```
+
+Even without `targets`, a project browserslist config (the `browserslist` field in package.json or `.browserslistrc`) is auto-detected. `targets: false` disables detection entirely.
+
 ## What you cannot write
 
 ### `${}` interpolation — build error

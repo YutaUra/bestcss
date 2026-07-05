@@ -1,15 +1,16 @@
-import { transform as transformCss } from "lightningcss";
+import { transform as transformCss, type Targets } from "lightningcss";
 
 /**
  * CSS を minify する。ルート単位 CSS 分割でプラグインが自前 emit する
  * アセットは Vite の CSS パイプライン（cssMinify）を通らないため、
  * 同じ Lightning CSS でここで最小化する
  */
-export function minifyCss(css: string): string {
+export function minifyCss(css: string, targets?: Targets): string {
   const result = transformCss({
     filename: "bestcss-minify.css",
     code: Buffer.from(css),
     minify: true,
+    targets,
   });
   return result.code.toString();
 }

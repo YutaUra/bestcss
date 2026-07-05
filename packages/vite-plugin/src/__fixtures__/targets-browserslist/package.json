@@ -1,0 +1,8 @@
+{
+  "name": "targets-browserslist-fixture",
+  "private": true,
+  "browserslist": [
+    "safari 15"
+  ],
+  "type": "module"
+}

@@ -4,6 +4,7 @@ export { dedupeCss } from "./dedupe.js";
 export { minifyCss } from "./minify.js";
 export { collectImportSources } from "./imports.js";
 export { css } from "./css.js";
+export { resolveTargets, type Targets } from "./targets.js";
 export {
   transform,
   type TransformOptions,

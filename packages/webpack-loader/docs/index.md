@@ -81,6 +81,14 @@ use: [{ loader: "@bestcss/webpack-loader", options: { layers: ["base", "componen
 new BestCssWebpackPlugin({ layers: ["base", "components", "utilities"] }),
 ```
 
+## ブラウザ対応（targets）
+
+browserslist クエリを渡すと、ネストのフラット化とベンダープレフィックス付与が行われる（未指定ならプロジェクトの browserslist 設定を自動検出）。@layer と同様、loader と css loader の両方（Turbopack では rule options にも）に同じ値を渡す:
+
+```js
+use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
+```
+
 ## 制限
 
 - **Turbopack ではサイズ最適化（クラス名短縮・CSS 重複排除）が使えない** — Turbopack にはアセット後処理のフック（webpack の processAssets 相当）が存在しないため。内容ハッシュ名（`bc...`、9 文字程度）のまま配信される。抽出・ゼロランタイムは動作する

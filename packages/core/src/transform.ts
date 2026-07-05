@@ -1,5 +1,5 @@
 import { encode } from "@jridgewell/sourcemap-codec";
-import { transform as transformCss } from "lightningcss";
+import { transform as transformCss, type Targets } from "lightningcss";
 import MagicString, { type SourceMap } from "magic-string";
 import { parseSync } from "oxc-parser";
 import { extractLayerBlocks } from "./cascade-layers.js";
@@ -18,6 +18,13 @@ export interface TransformOptions {
    * 非決定的なレイヤー順を構造的に排除するため）
    */
   layers?: string[];
+  /**
+   * Lightning CSS のブラウザターゲット。指定するとネストのフラット化や
+   * ベンダープレフィックス付与などのダウンレベルが行われる。
+   * 未指定ならモダンブラウザ前提でソースの構文をそのまま出力する。
+   * browserslist クエリからの変換は resolveTargets を使う
+   */
+  targets?: Targets;
 }
 
 export interface TransformResult {
@@ -272,6 +279,7 @@ export function transform(
       minify: false,
       sourceMap: true,
       inputSourceMap,
+      targets: options.targets,
     });
     cssOutput = result.code.toString();
     // map が返らない場合は入力マップで代用する（行単位の近似としては有効）
