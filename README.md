@@ -2,6 +2,8 @@
 
 ゼロランタイム × コロケーション × 生 CSS 文法 × サイズ最適化を「全部取り」する CSS ライブラリ。
 
+**📖 ドキュメント: https://yutaura.github.io/bestcss/** （日本語 / [English](https://yutaura.github.io/bestcss/en/)）
+
 ## なぜこれが必要か
 
 既存の CSS ライブラリはそれぞれ何かを犠牲にしている。tailwindcss はゼロランタイムと引き換えに HTML の class を肥大させ、styled-components はコロケーションと引き換えにランタイムコストを払い、vanilla-extract / panda-css はゼロランタイムと引き換えに生 CSS 文法を捨て、CSS Modules はファイル分割と引き換えにファイル往復を強いる。
