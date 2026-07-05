@@ -69,6 +69,16 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
+## Cascade layers (@layer)
+
+To use `@layer` inside css``, pass the same `layers` to both the loader and the optimization plugin (and to the css loader's rule options on Turbopack):
+
+```js
+use: [{ loader: "@bestcss/webpack-loader", options: { layers: ["base", "components", "utilities"] } }],
+// ...
+new BestCssWebpackPlugin({ layers: ["base", "components", "utilities"] }),
+```
+
 ## Limitations
 
 - **Size optimization (class minification / CSS dedup) is unavailable on Turbopack** — it has no post-bundle asset hook (webpack's processAssets equivalent). Content-hash names (`bc...`, ~9 chars) ship instead. Extraction and zero runtime work fine

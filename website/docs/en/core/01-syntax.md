@@ -36,6 +36,33 @@ const title = css`
 `;
 ```
 
+## Cascade layers (@layer)
+
+Write `@layer name { ... }` as plain CSS at the top level of a block. This makes composition outcomes deterministic — decided by **layer order** rather than output order:
+
+```ts
+const base = css`
+  @layer components {
+    padding: 8px 16px;
+    background: gray;
+  }
+`;
+
+const override = css`
+  @layer utilities {
+    background: red; /* always beats components, regardless of output order */
+  }
+`;
+```
+
+The plugin config owns the layer order (lowest → highest). **Using an undeclared name is a build error** (this structurally eliminates first-appearance-order nondeterminism):
+
+```ts
+bestCss({ layers: ["base", "components", "utilities"] })
+```
+
+Plain css`` (unlayered) still beats every layer, as before. We deliberately did not add a JS API like `css.layer()`: changing the tag away from `css` breaks embedded-CSS recognition in Prettier, stylelint, and editor extensions (verified empirically) — plain CSS syntax keeps the whole toolchain working.
+
 ## What you cannot write
 
 ### `${}` interpolation — build error
@@ -70,7 +97,7 @@ const title = css`color: var(--brand);`;
 
 ## A note on class composition (general CSS rule)
 
-Composing like `` `${base} ${variant}` `` works, but when the same property conflicts, the winner is decided by **rule order in the stylesheet, not the order in className**. Avoid writing the same property in both base and variant.
+Composing like `` `${base} ${variant}` `` works, but when the same property conflicts, the winner is decided by **rule order in the stylesheet, not the order in className**. Avoid writing the same property in both base and variant — or use @layer above, putting the base in a lower layer and the variant in a higher one for output-order-independent determinism.
 
 ```tsx
 const base = css`padding: 8px 16px; border-radius: 6px;`;

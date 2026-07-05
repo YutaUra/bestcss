@@ -2,6 +2,7 @@ import { encode } from "@jridgewell/sourcemap-codec";
 import { transform as transformCss } from "lightningcss";
 import MagicString, { type SourceMap } from "magic-string";
 import { parseSync } from "oxc-parser";
+import { extractLayerBlocks } from "./cascade-layers.js";
 import { generateClassName } from "./class-name.js";
 import { extractKeyframes, rewriteAnimationNames } from "./keyframes.js";
 
@@ -10,6 +11,13 @@ const CSS_TAG_MODULE = "@bestcss/core";
 
 export interface TransformOptions {
   filename: string;
+  /**
+   * カスケードレイヤーの順序宣言（下位 → 上位）。
+   * css`` 内で `@layer name { ... }` を使う場合は必須で、名前は
+   * この一覧に含まれていなければならない（「初出順」依存の
+   * 非決定的なレイヤー順を構造的に排除するため）
+   */
+  layers?: string[];
 }
 
 export interface TransformResult {
@@ -201,15 +209,41 @@ export function transform(
   for (const kf of keyframesStatements.values()) {
     pushChunk(kf.statement, kf.originLine, false);
   }
+  let usesLayers = false;
   for (const block of blocks) {
     const rewritten = rewriteAnimationNames(block.css, keyframesRenames);
+    // クラス名はレイヤー構文込みでハッシュする（同一宣言でもレイヤーが
+    // 違えばカスケード上は別物のため、別クラスに分離する）
     const className = generateClassName(rewritten);
     classNames.push(className);
-    pushChunk(
-      `.${className} {${rewritten}}`,
-      lineNumberAt(code, block.tag.start),
-      true,
-    );
+    const originLine = lineNumberAt(code, block.tag.start);
+    const { css: unlayeredCss, layers: layerBlocks } =
+      extractLayerBlocks(rewritten);
+    for (const layer of layerBlocks) {
+      usesLayers = true;
+      if (options.layers === undefined) {
+        throw new Error(
+          `bestcss: ${options.filename} — @layer を使うには、プラグインの ` +
+            `layers オプションでレイヤー順を宣言してください` +
+            `（例: bestCss({ layers: ["base", "components", "utilities"] })）。`,
+        );
+      }
+      if (!options.layers.includes(layer.name)) {
+        throw new Error(
+          `bestcss: ${options.filename} — レイヤー "${layer.name}" は layers ` +
+            `設定（${options.layers.join(", ")}）に含まれていません。` +
+            `レイヤー順を決定的に保つため、使用する名前はすべて宣言が必要です。`,
+        );
+      }
+      pushChunk(
+        `@layer ${layer.name} {\n.${className} {${layer.body}}\n}`,
+        originLine,
+        false,
+      );
+    }
+    if (unlayeredCss.trim() !== "") {
+      pushChunk(`.${className} {${unlayeredCss}}`, originLine, true);
+    }
     ms.overwrite(block.tag.start, block.tag.end, JSON.stringify(className));
   }
 
@@ -247,6 +281,19 @@ export function transform(
     throw new Error(
       `bestcss: ${options.filename} の CSS の解析に失敗しました: ${message}`,
     );
+  }
+
+  // レイヤーを使うファイルは先頭に順序宣言を置く。全ファイルが同一の
+  // 完全な宣言を持つことで、モジュールの読み込み順に依らずドキュメント
+  // 全体のレイヤー順が一意に定まる。Lightning CSS を通した後に付与する
+  // 理由: 最適化で宣言から後続レイヤー名が切り詰められ、ファイル内の
+  // ブロック出現順に依存した順序へ壊れることを実測で確認したため
+  if (usesLayers && options.layers !== undefined) {
+    cssOutput = `@layer ${options.layers.join(", ")};\n${cssOutput}`;
+    // 出力が 1 行増えるため、CSS ソースマップの行を 1 つずらす
+    const parsedMap = JSON.parse(cssMap) as { mappings: string };
+    parsedMap.mappings = `;${parsedMap.mappings}`;
+    cssMap = JSON.stringify(parsedMap);
   }
 
   return {

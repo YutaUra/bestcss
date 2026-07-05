@@ -43,11 +43,13 @@ export const Button = () => <button className={button}>Click</button>;
 bestCss({
   minifyClassNames?: boolean,        // デフォルト true
   ssr?: boolean | { routesDir?: string },
+  layers?: string[],                 // カスケードレイヤーの順序（下位 → 上位）
 })
 ```
 
 - **minifyClassNames** — 本番ビルドでクラス名を使用頻度順の短い名前（`a`, `b`, ...）へ振り直す。dev では常に内容ハッシュ名（`bc...`）。`false` は SSR した HTML を長期キャッシュする等、ビルド間の名前安定性を優先したい場合
 - **ssr** — SSR プロジェクトの宣言。[SSR / MPA 統合](./01-ssr.md) を参照
+- **layers** — css`` 内で `@layer name { ... }` を使うための順序宣言。使用する名前はすべて宣言が必要（詳細は [core: css`` の文法](../../core/docs/01-syntax.md)）
 
 ## テスト（Vitest）
 

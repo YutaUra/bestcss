@@ -259,3 +259,88 @@ describe("transform", () => {
     expect(() => transform(code, { filename: FILENAME })).toThrow(FILENAME);
   });
 });
+
+describe("@layer（カスケードレイヤー）", () => {
+  const LAYERS = { filename: FILENAME, layers: ["base", "components", "utilities"] };
+
+  it("css`` 内の @layer ブロックがホイストされ、クラスルールを包む", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`@layer components { padding: 16px; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, LAYERS);
+
+    expect(result!.css).toMatch(/@layer components \{[\s\S]*\.bc[a-z0-9]+/);
+  });
+
+  it("unlayered の宣言と @layer ブロックを同一 css`` に併記できる", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`margin: 0; @layer components { padding: 16px; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, LAYERS);
+    const className = extractClassName(result!.code, "a");
+
+    // 同一クラス名で unlayered ルールと layered ルールの両方が出る
+    expect(result!.css).toMatch(new RegExp(`^\\.${className}[\\s{]`, "m"));
+    expect(result!.css).toContain("margin: 0");
+    expect(result!.css).toMatch(/@layer components/);
+  });
+
+  it("レイヤー使用時、出力の先頭にレイヤー順の宣言を付ける", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`@layer utilities { padding: 0; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, LAYERS);
+
+    expect(result!.css.trimStart().startsWith("@layer base, components, utilities;")).toBe(true);
+  });
+
+  it("レイヤー未使用のファイルには順序宣言を付けない", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`padding: 0;\`;`,
+    ].join("\n");
+
+    const result = transform(code, LAYERS);
+
+    expect(result!.css).not.toContain("@layer");
+  });
+
+  it("設定にないレイヤー名はファイル名を含むエラーで拒否する（初出順依存の防止）", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`@layer typo { padding: 0; }\`;`,
+    ].join("\n");
+
+    expect(() => transform(code, LAYERS)).toThrow(FILENAME);
+    expect(() => transform(code, LAYERS)).toThrow(/typo/);
+  });
+
+  it("layers 設定なしで @layer を使うとエラーになる（順序の所有者が必要）", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`@layer components { padding: 0; }\`;`,
+    ].join("\n");
+
+    expect(() => transform(code, { filename: FILENAME })).toThrow(/layers/);
+  });
+
+  it("同一宣言でもレイヤーが違えば別のクラス名になる", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`@layer base { padding: 16px; }\`;`,
+      `const b = css\`@layer components { padding: 16px; }\`;`,
+    ].join("\n");
+
+    const result = transform(code, LAYERS);
+
+    expect(extractClassName(result!.code, "a")).not.toBe(
+      extractClassName(result!.code, "b"),
+    );
+  });
+});

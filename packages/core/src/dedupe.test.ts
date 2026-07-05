@@ -78,4 +78,17 @@ describe("dedupeCss", () => {
     expect(result.match(/\.bca/g)).toHaveLength(1);
     expect(result).toContain(".bcb");
   });
+
+  it("@layer の順序宣言は最初の出現を残す（先頭で順序を確定させる）", () => {
+    const css = [
+      "@layer base, components;",
+      "@layer components {\n.bca {color: red;}\n}",
+      "@layer base, components;",
+    ].join("\n");
+
+    const result = dedupeCss(css);
+
+    expect(result.match(/@layer base, components;/g)).toHaveLength(1);
+    expect(result.trimStart().startsWith("@layer base, components;")).toBe(true);
+  });
 });

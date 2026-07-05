@@ -43,11 +43,13 @@ See [css`` syntax](/en/core/01-syntax) for what you can write.
 bestCss({
   minifyClassNames?: boolean,        // default: true
   ssr?: boolean | { routesDir?: string },
+  layers?: string[],                 // cascade layer order (lowest → highest)
 })
 ```
 
 - **minifyClassNames** — renames classes to short, frequency-ordered names (`a`, `b`, ...) in production builds. Dev always uses content-hash names (`bc...`). Set `false` when you need class names stable across builds (e.g. long-cached SSR HTML)
 - **ssr** — declares an SSR project. See [SSR / MPA integration](/en/vite/01-ssr)
+- **layers** — layer-order declaration required to use `@layer name { ... }` inside css``. Every name used must be declared (see [css`` syntax](/en/core/01-syntax))
 
 ## Testing (Vitest)
 

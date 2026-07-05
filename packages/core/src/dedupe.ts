@@ -8,20 +8,34 @@
  * みなすことで「異なるメディアクエリ内の同一ルール」を誤って統合する
  * 事故が構造的に起きない。
  */
+/** `@layer a, b;` 形式の順序宣言か（ブロックを持たない @layer 文） */
+const isLayerOrderStatement = (statement: string): boolean =>
+  /^@layer\s[^{}]+;$/.test(statement);
+
 export function dedupeCss(css: string): string {
   const statements = splitTopLevelStatements(css);
 
   const lastIndexByKey = new Map<string, number>();
+  const firstIndexByKey = new Map<string, number>();
   statements.forEach((statement, index) => {
-    lastIndexByKey.set(statement.trim(), index);
+    const key = statement.trim();
+    lastIndexByKey.set(key, index);
+    if (!firstIndexByKey.has(key)) {
+      firstIndexByKey.set(key, index);
+    }
   });
 
-  // 最後の出現を残す理由: 複数クラスを併用した要素では同一詳細度の
-  // ルール間で後方が勝つため、前方を残すと間に挟まったルールとの
-  // 勝敗が元の CSS と変わってしまう
-  const deduped = statements.filter(
-    (statement, index) => lastIndexByKey.get(statement.trim()) === index,
-  );
+  // 通常のルールは最後の出現を残す: 複数クラスを併用した要素では同一
+  // 詳細度のルール間で後方が勝つため、前方を残すと間に挟まったルールとの
+  // 勝敗が元の CSS と変わってしまう。
+  // @layer の順序宣言だけは最初の出現を残す: レイヤー順は最初の宣言で
+  // 確定するため、先頭（あらゆる layered ルールより前）に置く必要がある
+  const deduped = statements.filter((statement, index) => {
+    const key = statement.trim();
+    return isLayerOrderStatement(key)
+      ? firstIndexByKey.get(key) === index
+      : lastIndexByKey.get(key) === index;
+  });
 
   return deduped.join("\n");
 }

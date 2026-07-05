@@ -71,6 +71,16 @@ const nextConfig: NextConfig = {
 export default nextConfig;
 ```
 
+## カスケードレイヤー（@layer）
+
+css`` 内で `@layer` を使う場合は、loader と最適化プラグインの両方に同じ `layers` を渡す（Turbopack では css loader 側の rule options にも）:
+
+```js
+use: [{ loader: "@bestcss/webpack-loader", options: { layers: ["base", "components", "utilities"] } }],
+// ...
+new BestCssWebpackPlugin({ layers: ["base", "components", "utilities"] }),
+```
+
 ## 制限
 
 - **Turbopack ではサイズ最適化（クラス名短縮・CSS 重複排除）が使えない** — Turbopack にはアセット後処理のフック（webpack の processAssets 相当）が存在しないため。内容ハッシュ名（`bc...`、9 文字程度）のまま配信される。抽出・ゼロランタイムは動作する

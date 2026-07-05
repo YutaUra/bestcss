@@ -2,6 +2,7 @@ import { transform } from "@bestcss/core";
 
 interface LoaderContext {
   resourcePath: string;
+  getOptions?: () => { layers?: string[] };
 }
 
 /**
@@ -13,7 +14,10 @@ export default function bestCssCssLoader(
   this: LoaderContext,
   source: string,
 ): string {
-  const result = transform(source, { filename: this.resourcePath });
+  const result = transform(source, {
+    filename: this.resourcePath,
+    layers: this.getOptions?.()?.layers,
+  });
   // css`` を含まない入力はそのまま返す（冪等）。Turbopack は as: "*.css" の
   // 適用後にルールを再評価することがあり、2 周目の入力は抽出済みの
   // CSS テキストになるため、素通しできないと空になってしまう

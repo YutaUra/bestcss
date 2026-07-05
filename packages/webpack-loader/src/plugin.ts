@@ -7,6 +7,12 @@ export interface BestCssWebpackPluginOptions {
    * @default true
    */
   minifyClassNames?: boolean;
+  /**
+   * カスケードレイヤーの順序宣言（loader の layers と同じ値を渡す）。
+   * 最終 CSS アセットの先頭に権威ある完全な順序宣言を付与し、
+   * minifier による切り詰めから順序を守る
+   */
+  layers?: string[];
 }
 
 // webpack の型に依存しない構造型。プラグインは compiler.webpack 経由で
@@ -55,9 +61,11 @@ const PLUGIN_NAME = "BestCssWebpackPlugin";
  */
 export class BestCssWebpackPlugin {
   private readonly minifyClassNames: boolean;
+  private readonly layers: string[] | undefined;
 
   constructor(options: BestCssWebpackPluginOptions = {}) {
     this.minifyClassNames = options.minifyClassNames ?? true;
+    this.layers = options.layers;
   }
 
   apply(compiler: CompilerLike): void {
@@ -76,9 +84,15 @@ export class BestCssWebpackPlugin {
           );
 
           for (const name of cssNames) {
+            let source = readAsset(name);
+            // minifier による順序宣言の切り詰めから守るため、
+            // 権威ある完全な宣言を先頭に付与する
+            if (this.layers !== undefined && source.includes("@layer")) {
+              source = `@layer ${this.layers.join(", ")};\n${source}`;
+            }
             compilation.updateAsset(
               name,
-              new sources.RawSource(dedupeCss(readAsset(name))),
+              new sources.RawSource(dedupeCss(source)),
             );
           }
 

@@ -36,6 +36,33 @@ const title = css`
 `;
 ```
 
+## カスケードレイヤー（@layer）
+
+`@layer name { ... }` を生 CSS 構文としてブロック直下に書ける。合成の勝敗を「出力順」ではなく「レイヤー順」で決定的にできる:
+
+```ts
+const base = css`
+  @layer components {
+    padding: 8px 16px;
+    background: gray;
+  }
+`;
+
+const override = css`
+  @layer utilities {
+    background: red; /* 出力順に関係なく components に必ず勝つ */
+  }
+`;
+```
+
+レイヤー順はプラグイン設定が所有する（下位 → 上位）。**設定にない名前の使用はビルドエラー**になる（「初出順」依存の非決定性を排除するため）:
+
+```ts
+bestCss({ layers: ["base", "components", "utilities"] })
+```
+
+未指定の css``（unlayered）は従来どおり全レイヤーに勝つ。JS 側の API（`css.layer()` など）にしていないのは、タグ名が `css` から変わると Prettier / stylelint / エディタ拡張の埋め込み CSS 認識がすべて外れることを実測で確認したため — 生 CSS 構文ならツールチェーンが素通しになる。
+
 ## 書けないもの
 
 ### `${}` 補間 — ビルドエラー
@@ -70,7 +97,7 @@ const title = css`color: var(--brand);`;
 
 ## クラス合成の注意（CSS の一般則）
 
-`` `${base} ${variant}` `` のような className 上の合成は可能だが、同一プロパティが衝突したときの勝敗は **className に並べた順ではなく、スタイルシート内でのルールの順** で決まる。ベースとバリアントで同じプロパティを両方に書かないこと。
+`` `${base} ${variant}` `` のような className 上の合成は可能だが、同一プロパティが衝突したときの勝敗は **className に並べた順ではなく、スタイルシート内でのルールの順** で決まる。ベースとバリアントで同じプロパティを両方に書かないこと。あるいは上記の @layer を使い、ベースを下位・バリアントを上位のレイヤーに置けば出力順に依存せず決定的になる。
 
 ```tsx
 const base = css`padding: 8px 16px; border-radius: 6px;`;

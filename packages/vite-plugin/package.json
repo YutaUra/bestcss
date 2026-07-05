@@ -1,6 +1,6 @@
 {
   "name": "@bestcss/vite-plugin",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "bestcss の Vite プラグイン。css`` の抽出・HMR・クラス名短縮・SSR / ルート単位 CSS 分割",
   "keywords": [
     "css",

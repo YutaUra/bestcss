@@ -13,6 +13,12 @@ export interface BestCssLoaderOptions {
    *   実行する」rule を設定する
    */
   importStyle?: "match-resource" | "query";
+  /**
+   * カスケードレイヤーの順序宣言（下位 → 上位）。css`` 内で
+   * `@layer name { ... }` を使う場合は必須。Turbopack（importStyle:
+   * "query"）では css loader 側の rule にも同じ options を指定すること
+   */
+  layers?: string[];
 }
 
 interface LoaderContext {
@@ -37,7 +43,11 @@ export default function bestCssLoader(
   this: LoaderContext,
   source: string,
 ): void {
-  const result = transform(source, { filename: this.resourcePath });
+  const options = this.getOptions?.() ?? {};
+  const result = transform(source, {
+    filename: this.resourcePath,
+    layers: options.layers,
+  });
   if (result === null) {
     this.callback(null, source);
     return;
@@ -52,13 +62,19 @@ export default function bestCssLoader(
     );
   }
 
-  const importStyle = this.getOptions?.().importStyle ?? "match-resource";
+  const importStyle = options.importStyle ?? "match-resource";
+  // css loader 側にも layers を伝える（webpack の loader クエリは JSON 形式で
+  // getOptions に渡る）。matchResource 文字列にはオプション指定の口が無いため
+  const cssLoader =
+    options.layers === undefined
+      ? "@bestcss/webpack-loader/css"
+      : `@bestcss/webpack-loader/css?${JSON.stringify({ layers: options.layers })}`;
   const cssRequest =
     importStyle === "query"
       ? `./${path.basename(this.resourcePath)}?bestcss`
       : // matchResource を .css にすることで、利用側の既存 CSS ルール
         // （css-loader / mini-css-extract 等）がそのまま適用される
-        `${this.resourcePath}.bestcss.css!=!@bestcss/webpack-loader/css!${this.resourcePath}`;
+        `${this.resourcePath}.bestcss.css!=!${cssLoader}!${this.resourcePath}`;
   this.callback(
     null,
     `${result.code}\nimport ${JSON.stringify(cssRequest)};\n`,

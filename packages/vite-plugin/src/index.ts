@@ -79,10 +79,20 @@ export interface BestCssOptions {
    * - routesDir を指定するとルート単位の CSS 分割も有効になる
    */
   ssr?: boolean | BestCssSsrOptions;
+  /**
+   * カスケードレイヤーの順序宣言（下位 → 上位）。
+   * css`` 内で `@layer name { ... }` を使う場合は必須で、使用する名前は
+   * すべてこの一覧に含まれていなければならない（初出順依存の
+   * 非決定的なレイヤー順を構造的に排除するため）
+   *
+   * @example bestCss({ layers: ["base", "components", "utilities"] })
+   */
+  layers?: string[];
 }
 
 export function bestCss(options: BestCssOptions = {}): Plugin {
   const minifyClassNames = options.minifyClassNames ?? true;
+  const layers = options.layers;
   const ssr =
     options.ssr === undefined || options.ssr === false
       ? null
@@ -193,6 +203,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     }
     const result = transform(fs.readFileSync(sourceFile, "utf8"), {
       filename: sourceFile,
+      layers,
     });
     sourceMtimes.set(base, mtime);
     if (result === null) {
@@ -275,6 +286,10 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       let minified = minifyCss(cssText);
       if (renameMap !== null) {
         minified = applyRename(minified, renameMap);
+      }
+      // minifyCss（Lightning CSS）による順序宣言の切り詰めを修復する
+      if (layers !== undefined && minified.includes("@layer")) {
+        minified = dedupeCss(`@layer ${layers.join(", ")};\n${minified}`);
       }
       const fileName = `assets/bestcss.${generateClassName(minified)}.css`;
       if (!(fileName in bundle)) {
@@ -489,7 +504,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       if (!TRANSFORM_TARGET_RE.test(id) || id.includes("/node_modules/")) {
         return null;
       }
-      const result = transform(code, { filename: id });
+      const result = transform(code, { filename: id, layers });
       if (result === null) {
         // css`` が全て削除された場合、新しいコードに import が残らないため
         // Vite の HMR prune が古い style 要素を除去する。ここでの後始末は不要
@@ -594,7 +609,15 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
         // 無効にした構成でも「サイズ最適化」の保証が消えないよう自前でも行う
         for (const [fileName, output] of Object.entries(bundle)) {
           if (output.type === "asset" && fileName.endsWith(".css")) {
-            output.source = dedupeCss(String(output.source));
+            let source = String(output.source);
+            // Vite の cssMinify（Lightning CSS）はレイヤー順宣言を
+            // ブロック出現順ベースに切り詰めることがあり、モジュール結合順に
+            // 依存した順序へ壊れ得る。権威ある完全な宣言を先頭に付与して
+            // 順序を確定させる（後続の切り詰め断片は CSS 仕様上無害になる）
+            if (layers !== undefined && source.includes("@layer")) {
+              source = `@layer ${layers.join(", ")};\n${source}`;
+            }
+            output.source = dedupeCss(source);
           }
         }
 
