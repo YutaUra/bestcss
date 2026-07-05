@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createServer, type ViteDevServer } from "vite";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { bestCss } from "./index.js";
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, "__fixtures__");
@@ -41,6 +41,33 @@ const simulateFileChange = (dev: ViteDevServer, content: string): void => {
     throw new Error("entry モジュールがモジュールグラフに存在しません");
   }
   graph.invalidateModule(mod);
+};
+
+/**
+ * 実ファイル保存を watcher イベントごと再現するテスト用ヘルパー。
+ *
+ * simulateFileChange（手動 invalidate）と別に用意する理由:
+ * 実環境では保存すると watcher が発火してプラグインの hotUpdate が走る。
+ * writeFileSync 由来の watcher 発火は環境依存のタイミング（macOS の
+ * fsevents は遅く、Linux の inotify は速い）で、CI でだけ hotUpdate が
+ * transformRequest より先に走り URL に ?t= が付く回帰があった。
+ * emit で明示的に発火させ、この経路を全環境で決定的にテストする
+ */
+const emitWatcherChange = async (
+  dev: ViteDevServer,
+  content: string,
+): Promise<void> => {
+  fs.writeFileSync(ENTRY, content);
+  dev.watcher.emit("change", ENTRY);
+  // Vite の HMR 処理は非同期なので、entry の変換キャッシュが
+  // 無効化される（= hotUpdate まで処理が届いた）のを待つ
+  const graph = dev.environments.client.moduleGraph;
+  await vi.waitFor(() => {
+    const mod = graph.getModuleById(ENTRY);
+    if (mod?.transformResult != null) {
+      throw new Error("watcher イベントがまだ処理されていません");
+    }
+  });
 };
 
 /** 変換後コードから仮想 CSS モジュールの import URL を取り出すヘルパー */
@@ -89,6 +116,21 @@ describe("dev サーバーの HMR", () => {
     const after = await dev.transformRequest(ENTRY_URL);
     const urlAfter = extractCssImportUrl(after?.code);
 
+    expect(urlAfter).toBe(urlBefore);
+  });
+
+  it("watcher 経由の保存でも、内容が同じなら import URL が変わらない", async () => {
+    fs.writeFileSync(ENTRY, sourceWithPadding("1px"));
+    const dev = await startServer();
+    const before = await dev.transformRequest(ENTRY_URL);
+    const urlBefore = extractCssImportUrl(before?.code);
+
+    await emitWatcherChange(dev, sourceWithPadding("1px"));
+    const after = await dev.transformRequest(ENTRY_URL);
+    const urlAfter = extractCssImportUrl(after?.code);
+
+    // ?hash= 付き URL は内容アドレスなので、hotUpdate が仮想 CSS を
+    // HMR 更新対象に含めると Vite が ?t= を付けて URL が変わってしまう
     expect(urlAfter).toBe(urlBefore);
   });
 

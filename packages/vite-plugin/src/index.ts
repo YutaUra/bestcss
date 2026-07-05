@@ -583,6 +583,14 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       const extra: unknown[] = [];
       let linkOnly = false;
       for (const mod of mods) {
+        // ?hash= 付きの変種（import 用）は無効化せず HMR 更新対象にも
+        // 含めない。内容アドレス方式なので同一 URL の内容は不変で、
+        // 内容が変われば import URL 自体が変わる。更新対象に含めると
+        // Vite が lastHMRTimestamp を付け、同一内容の保存でも import に
+        // ?t= が付与されて「内容不変なら URL 不変」の保証が壊れる
+        if (((mod as { id?: string }).id ?? "").includes("?hash=")) {
+          continue;
+        }
         graph.invalidateModule?.(mod as never);
         extra.push(mod);
         const importers = (mod as { importers?: Set<unknown> }).importers;
