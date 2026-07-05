@@ -1,13 +1,36 @@
 import fs from "node:fs";
 import path from "node:path";
 import { build, createServer, type Rollup, type ViteDevServer } from "vite";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { bestCss } from "./index.js";
 
-const ROOT = path.resolve(import.meta.dirname, "__fixtures__/route-styles");
+const SOURCE_ROOT = path.resolve(
+  import.meta.dirname,
+  "__fixtures__/route-styles",
+);
+// route-styles fixture を直接使わず専用コピーで動かす理由:
+// このスイートは HMR テストで routes/index.ts を一時的に書き換える。
+// vitest はテストファイルを並列ワーカーで実行するため、同じ fixture を
+// ビルドする route-styles.test.ts がその書き換え中の内容を拾って
+// flake になっていた（テストの独立性違反）。
+// コピー先を __fixtures__ 配下に置くのは、fixture が import する
+// @bestcss/core の解決（node_modules の探索チェーン）を保つため
+const ROOT = path.resolve(
+  import.meta.dirname,
+  "__fixtures__/.tmp-dev-styles-root",
+);
 const TMP_ENTRY = path.join(ROOT, "dev-entry.tmp.ts");
 
 let server: ViteDevServer | undefined;
+
+beforeAll(() => {
+  fs.rmSync(ROOT, { recursive: true, force: true });
+  fs.cpSync(SOURCE_ROOT, ROOT, { recursive: true });
+});
+
+afterAll(() => {
+  fs.rmSync(ROOT, { recursive: true, force: true });
+});
 
 afterEach(async () => {
   await server?.close();

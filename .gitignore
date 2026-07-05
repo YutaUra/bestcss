@@ -7,3 +7,6 @@ storybook-static/
 .next/
 out/
 next-env.d.ts
+
+# テストが生成する一時 fixture（クラッシュ時の残骸を拾わない）
+.tmp-*
