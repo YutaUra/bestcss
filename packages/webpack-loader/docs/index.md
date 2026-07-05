@@ -89,6 +89,30 @@ browserslist クエリを渡すと、ネストのフラット化とベンダー�
 use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
 ```
 
+## webpack で SSR する
+
+client / server の 2 コンパイル構成では、クラス名短縮の一致を `ssr: true` で取る。CSS アセットを持つクライアントビルドがリネーム表を `node_modules/.bestcss/rename-map.json` へ書き出し、サーバービルドは表に従って書き換える（**ビルドは client → server の順**。Vite 版と同じ仕組み）:
+
+```js
+// クライアント側 config
+plugins: [new BestCssWebpackPlugin({ ssr: true })],
+
+// サーバー側 config
+module: {
+  rules: [{
+    test: /\.[jt]sx?$/,
+    exclude: /node_modules/,
+    // サーバーは CSS を配信しないため import を発行しない
+    use: [{ loader: "@bestcss/webpack-loader", options: { emitCss: false } }],
+  }],
+},
+plugins: [new BestCssWebpackPlugin({ ssr: true })],
+```
+
+表がない状態でサーバービルドするとエラーメッセージで順序を案内する。
+
+**Next.js での位置づけ**: Turbopack ではルート単位の CSS 分割・配信を Next 自身が行い、クラス名は内容ハッシュのまま（短縮なし）なので SSR された HTML と CSS は最初から一致する — 追加の設定は不要。webpack モードの Next.js は client / server のコンパイルが並列に走るため client → server の順序契約を満たせない。短縮が必要なら Turbopack を使うこと。
+
 ## テスト（Jest）
 
 Jest はビルド変換を通さないため、`@bestcss/core/testing` へ差し替える（詳細は [core: エディタとツールチェーンの活用](../../core/docs/04-tooling.md)）。
@@ -96,7 +120,7 @@ Jest はビルド変換を通さないため、`@bestcss/core/testing` へ差し
 ## 制限
 
 - **Turbopack ではサイズ最適化（クラス名短縮・CSS 重複排除）が使えない** — Turbopack にはアセット後処理のフック（webpack の processAssets 相当）が存在しないため。内容ハッシュ名（`bc...`、9 文字程度）のまま配信される。抽出・ゼロランタイムは動作する
-- SSR スイート（ルート単位分割・`routeCssHrefs`）は Vite 版のみ
+- ルート単位の CSS 分割（`routeCssHrefs`）は Vite 版のみ（Next.js はフレームワーク自身が行うため不要）。SSR でのクラス名短縮の一致は上記 `ssr: true` で対応
 - ファイルパスに `!` または `?` を含むファイルは扱えない（webpack のリクエスト構文と衝突するため明示的にエラーになる）
 
 補足: `"sideEffects": false` を宣言したパッケージ内で css`` を使う場合は、上記 CSS ルールの `sideEffects: true` に加え、そのパッケージの宣言を `"sideEffects": ["**/*.css"]` にすること。

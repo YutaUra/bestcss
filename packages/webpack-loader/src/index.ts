@@ -29,6 +29,13 @@ export interface BestCssLoaderOptions {
    * css loader 側の rule にも同じ options を指定すること
    */
   targets?: string | string[] | false;
+  /**
+   * 抽出 CSS の import を発行するか。サーバービルド（SSR）は CSS を
+   * 配信しないため false にする（クラス名リテラルへの変換だけが行われる）
+   *
+   * @default true
+   */
+  emitCss?: boolean;
 }
 
 interface LoaderContext {
@@ -65,6 +72,11 @@ export default function bestCssLoader(
   });
   if (result === null) {
     this.callback(null, source);
+    return;
+  }
+
+  if (options.emitCss === false) {
+    this.callback(null, result.code, result.map);
     return;
   }
 

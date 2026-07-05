@@ -118,7 +118,7 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 | テーマ / デザイントークン機構 | ➖ ⁵ | 🟡 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ |
 | Vite 統合 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Vite 以外（webpack / Next.js 等） | ✅ ⁸ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| エディタ支援（ハイライト・補完） | 🟡 ⁷ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
+| エディタ支援（ハイライト・補完） | ✅ ⁷ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
 
 ¹ 1 要素 1〜2 クラス + ビルド時の頻度順短縮（[ADR-0004](docs/decisions/0004-build-time-class-name-minification.md)）。実測は [bench/RESULTS.md](bench/RESULTS.md)
 ² `identifiers: "short"` で短縮可能（頻度順ではない）
@@ -126,8 +126,8 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 ⁴ 通常の `.css` ファイルで代替する方針（[書き方ガイド](#書き方ガイド)）。専用 API は持たない
 ⁵ ランタイム動的スタイルとトークン機構は charter で対象外。CSS カスタムプロパティで代替する
 ⁶ 生 CSS 文法を優先する設計上のトレードオフ。`${}` 補間は型レベルで拒否する
-⁷ `css` タグ対応の既存エディタ拡張（vscode-styled-components 等）が流用できる見込み。未検証
-⁸ webpack / Next.js（Turbopack）は `@bestcss/webpack-loader` で抽出・ゼロランタイムが動作（[ADR-0008](docs/decisions/0008-non-vite-integration-strategy.md)、[examples/nextjs](examples/nextjs)）。サイズ最適化（短縮・重複排除）は webpack では `BestCssWebpackPlugin` で対応、Turbopack はアセット後処理フックが無いため未対応（内容ハッシュ名のまま）。SSR スイート（ルート分割等）は Vite 版のみ
+⁷ `css` タグ対応の既存エコシステム（vscode-styled-components / Prettier / stylelint 等）がそのまま使えることを実測済み（[エディタとツールチェーンの活用](https://yutaura.github.io/bestcss/core/04-tooling)）
+⁸ webpack / Next.js（Turbopack）は `@bestcss/webpack-loader` で抽出・ゼロランタイムが動作（[ADR-0008](docs/decisions/0008-non-vite-integration-strategy.md)、[examples/nextjs](examples/nextjs)）。サイズ最適化（短縮・重複排除）は webpack では `BestCssWebpackPlugin` で対応（SSR は `ssr: true` でリネーム表共有）、Turbopack はアセット後処理フックが無いため未対応（内容ハッシュ名のまま）。ルート単位 CSS 分割は Vite 版のみ（Next.js はフレームワーク自身が行う）
 
 ### この表から見える不足（解消候補）
 

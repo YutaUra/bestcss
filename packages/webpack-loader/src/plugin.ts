@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { applyRename, createRenameMap, dedupeCss } from "@bestcss/core";
 
 export interface BestCssWebpackPluginOptions {
@@ -13,6 +15,17 @@ export interface BestCssWebpackPluginOptions {
    * minifier による切り詰めから順序を守る
    */
   layers?: string[];
+  /**
+   * SSR プロジェクト（client / server の 2 つのコンパイル）であることを
+   * 宣言する。両方のコンパイルに同じ値を渡す。
+   *
+   * CSS アセットを持つコンパイル（client）がリネーム表を
+   * node_modules/.bestcss/rename-map.json に書き出し、持たない
+   * コンパイル（server）は表に従って JS を書き換える。SSR された HTML と
+   * 配信 CSS の短縮名を一致させるため（ビルドは client → server の順）。
+   * Vite プラグインの ssr オプションと同じ仕組み（ADR-0006）
+   */
+  ssr?: boolean;
 }
 
 // webpack の型に依存しない構造型。プラグインは compiler.webpack 経由で
@@ -35,6 +48,7 @@ interface CompilationLike {
 }
 
 interface CompilerLike {
+  context: string;
   webpack: {
     Compilation: { PROCESS_ASSETS_STAGE_OPTIMIZE_SIZE: number };
     sources: { RawSource: new (source: string) => unknown };
@@ -62,10 +76,12 @@ const PLUGIN_NAME = "BestCssWebpackPlugin";
 export class BestCssWebpackPlugin {
   private readonly minifyClassNames: boolean;
   private readonly layers: string[] | undefined;
+  private readonly ssr: boolean;
 
   constructor(options: BestCssWebpackPluginOptions = {}) {
     this.minifyClassNames = options.minifyClassNames ?? true;
     this.layers = options.layers;
+    this.ssr = options.ssr ?? false;
   }
 
   apply(compiler: CompilerLike): void {
@@ -97,6 +113,41 @@ export class BestCssWebpackPlugin {
           }
 
           if (!this.minifyClassNames) {
+            return;
+          }
+
+          const mapPath = path.resolve(
+            compiler.context,
+            "node_modules/.bestcss/rename-map.json",
+          );
+
+          // CSS アセットを持たないコンパイル = サーバービルド。
+          // 自分の頻度で短縮すると client と一致しないため、共有された
+          // 表に従って JS だけを書き換える（Vite 版と同じ役割分担）
+          if (this.ssr && cssNames.length === 0) {
+            if (!fs.existsSync(mapPath)) {
+              throw new Error(
+                `bestcss: リネーム表 ${mapPath} が見つかりません。` +
+                  `表は CSS アセットを持つクライアントビルドが書き出すため、` +
+                  `クライアントビルドを先に実行してください。`,
+              );
+            }
+            const sharedMap = new Map(
+              Object.entries(
+                JSON.parse(fs.readFileSync(mapPath, "utf8")) as Record<
+                  string,
+                  string
+                >,
+              ),
+            );
+            for (const name of Object.keys(assets).filter((n) =>
+              n.endsWith(".js") || n.endsWith(".cjs") || n.endsWith(".mjs"),
+            )) {
+              compilation.updateAsset(
+                name,
+                new sources.RawSource(applyRename(readAsset(name), sharedMap)),
+              );
+            }
             return;
           }
 
@@ -132,6 +183,15 @@ export class BestCssWebpackPlugin {
             compilation.updateAsset(
               name,
               new sources.RawSource(applyRename(readAsset(name), renameMap)),
+            );
+          }
+
+          // 確定した表を後続のサーバービルドへ共有する
+          if (this.ssr) {
+            fs.mkdirSync(path.dirname(mapPath), { recursive: true });
+            fs.writeFileSync(
+              mapPath,
+              JSON.stringify(Object.fromEntries(renameMap), null, 2),
             );
           }
         },

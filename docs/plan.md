@@ -1,5 +1,5 @@
 > **Stability**: 🌀 evolving
-> **最終更新**: 2026-07-05（SSR 対応スイート完了を反映）
+> **最終更新**: 2026-07-06（ロードマップ棚卸しで検出したギャップ 4 件の解消を反映）
 > **直近の変更 ADR**: [ADR-0006](decisions/0006-rename-map-sharing.md) / [ADR-0007](decisions/0007-route-styles.md)
 
 # Plan — bestcss
@@ -82,6 +82,15 @@ tsx 内の `` css`...` `` タグ付きテンプレートをビルド時に抽出
 - [x] webpack で css`` の抽出・ゼロランタイムが動く（@bestcss/webpack-loader、実ビルドテストで検証）
 - [x] Next.js（Turbopack）の example で動く（`turbopack.rules` + `as: '*.css'` を build / dev で検証。examples/nextjs）
 - [x] loader 版のサイズ最適化: webpack は BestCssWebpackPlugin（processAssets フック）で短縮・重複排除に対応。Turbopack はアセット後処理フックが存在しないため対象外（内容ハッシュ名のまま配信）
+- [x] webpack SSR でのクラス名短縮の一致: `ssr: true` によるリネーム表共有（client → server、ADR-0006 と同じ仕組み）と loader の `emitCss: false`。Next.js は Turbopack ではルート単位 CSS を自身が扱い短縮なしのため元から一致、webpack モードは並列コンパイルのため短縮非対応と明文化
+
+### Phase 4.5: ギャップ解消（2026-07-06 完了）
+
+ロードマップ棚卸し（実装と plan / 星取表の突き合わせ）で検出したギャップの解消:
+
+- [x] ブラウザターゲット指定: `targets` オプション（browserslist クエリ）+ プロジェクトの browserslist 設定の自動検出。未指定なら生 CSS のまま（モダンブラウザ前提）
+- [x] テストランナー対応: `@bestcss/core/testing`（moduleNameMapper で差し替える css`` 実装。単一ブロックのクラス名は本番と一致）
+- [x] コンポーネントライブラリのプリコンパイル配布（[ADR-0013](decisions/0013-library-precompiled-distribution.md)）: 利用側ビルドが CSS アセットから bc 名を収穫して短縮・重複排除まで面倒を見る
 
 ## マイルストーン
 
