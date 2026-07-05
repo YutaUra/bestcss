@@ -21,6 +21,7 @@ const jaSidebar = [
         text: "Tailwind / UnoCSS からの移行",
         link: "/core/03-migrate-from-utility-frameworks",
       },
+      { text: "エディタとツールチェーン", link: "/core/04-tooling" },
     ],
   },
   {
@@ -54,6 +55,7 @@ const enSidebar = [
         text: "Migrating from Tailwind / UnoCSS",
         link: "/en/core/03-migrate-from-utility-frameworks",
       },
+      { text: "Editor & Toolchain", link: "/en/core/04-tooling" },
     ],
   },
   {
