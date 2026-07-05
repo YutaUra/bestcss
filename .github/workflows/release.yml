@@ -1,0 +1,87 @@
+name: Release
+
+# npm Trusted Publishing (OIDC) で公開する。トークン・OTP は不要で、
+# 事前に npmjs.com 側で各パッケージに Trusted Publisher
+# (YutaUra/bestcss + release.yml) を登録しておく必要がある。
+# 詳細は docs/releasing.md を参照
+on:
+  push:
+    tags: ["v*"]
+  # ワークフロー追加前に push 済みのタグや、失敗時の再実行用
+  workflow_dispatch:
+
+permissions:
+  contents: write # GitHub Release の作成
+  id-token: write # npm Trusted Publishing (OIDC)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          # OIDC publish には npm 11.5.1+ が必要なため、CI (Node 22) と
+          # 揃えず npm 11 系を同梱する Node 24 を使う
+          node-version: 24
+          cache: pnpm
+
+      - name: バージョン整合性チェック（ロックステップ + タグ一致）
+        id: version
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          VERSION=$(node -p "require('./packages/core/package.json').version")
+          for p in vite-plugin webpack-loader; do
+            V=$(node -p "require('./packages/$p/package.json').version")
+            if [ "$V" != "$VERSION" ]; then
+              echo "::error::ロックステップ違反: core=$VERSION だが $p=$V" && exit 1
+            fi
+          done
+          if [ "$REF_TYPE" = "tag" ] && [ "$REF_NAME" != "v$VERSION" ]; then
+            echo "::error::タグ $REF_NAME と package.json の v$VERSION が一致しない" && exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: node scripts/verify-packed-install.mjs
+
+      - name: npm publish（Trusted Publishing / OIDC）
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for p in core vite-plugin webpack-loader; do
+            # 再実行を冪等にする: 公開済みバージョンはスキップ
+            if npm view "@bestcss/$p@$VERSION" version > /dev/null 2>&1; then
+              echo "@bestcss/$p@$VERSION は公開済み。スキップ"
+              continue
+            fi
+            # pnpm pack を挟むのは workspace:* を実バージョンへ解決するため。
+            # npm publish をパッケージディレクトリで直接叩くと workspace
+            # プロトコルのまま公開されてしまう
+            (cd "packages/$p" && pnpm pack --out "/tmp/bestcss-$p.tgz")
+            npm publish "/tmp/bestcss-$p.tgz" --access public
+          done
+
+      - name: dist-tags 確認
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          for p in core vite-plugin webpack-loader; do
+            LATEST=$(npm view "@bestcss/$p" dist-tags.latest)
+            if [ "$LATEST" != "$VERSION" ]; then
+              echo "::error::@bestcss/$p の latest が $LATEST（期待: $VERSION）" && exit 1
+            fi
+          done
+
+      - name: GitHub Release 作成
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          gh release view "$REF_NAME" > /dev/null 2>&1 || \
+            gh release create "$REF_NAME" --generate-notes
