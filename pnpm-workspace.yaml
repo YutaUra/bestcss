@@ -2,6 +2,7 @@ packages:
   - packages/*
   - examples/*
   - bench
+  - website
 allowBuilds:
   esbuild: true
   sharp: true

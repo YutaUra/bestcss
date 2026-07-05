@@ -1,0 +1,5 @@
+docs/core/
+docs/vite/
+docs/webpack/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
