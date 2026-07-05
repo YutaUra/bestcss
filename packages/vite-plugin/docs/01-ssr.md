@@ -34,12 +34,14 @@ import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
 
 制限: 動的セグメント（`$id` 等）のパスマッチングは未対応。
 
-## dev のスタイル読み込み
+## dev のスタイル供給（routesDir 指定時は何も要らない）
 
-クライアントエントリで仮想モジュールを 1 行 import する。dev では全ルートのスタイルを HMR 付きで収集し、本番ビルドでは空になる:
+dev では `routeCssHrefs` がルート走査に基づく dev 用 URL（`?direct`）を返すため、**renderer の `<link>` だけで dev / prod 両方のスタイルが揃う**。island やクライアントエントリの有無に依存しない（クライアント JS を一切読み込まない純 SSR 構成でも動く）。スタイル編集は自動で反映される（`<link>` 専用供給は full-reload、クライアント JS グラフに importer がいる場合は通常の HMR）。
+
+routesDir を使わない構成では、クライアントエントリに仮想モジュールを 1 行 import する方法が使える（dev では全ルートのスタイルを収集し、本番ビルドでは空になる）:
 
 ```ts
-// app/client.ts
+// app/client.ts（routesDir を使わない場合のみ）
 import "virtual:bestcss/dev-styles";
 ```
 
@@ -48,6 +50,21 @@ import "virtual:bestcss/dev-styles";
 ```json
 { "compilerOptions": { "types": ["vite/client", "@bestcss/vite-plugin/client"] } }
 ```
+
+## 最小構成: island を持たない純 SSR（HonoX）
+
+hydration が無くても、必要なのは vite.config の `ssr: { routesDir }` と renderer の 2 点だけ:
+
+```tsx
+// app/routes/_renderer.tsx
+import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
+
+{routeCssHrefs(c.req.path).map((href) => (
+  <link href={href} rel="stylesheet" />
+))}
+```
+
+クライアントエントリも dev 専用エントリも不要。dev / prod とも同じ経路で配信される。
 
 ## リネーム表を使わない選択肢
 

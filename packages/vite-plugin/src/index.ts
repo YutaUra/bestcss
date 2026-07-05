@@ -386,27 +386,62 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       }
       // まだ変換していないソースの仮想 CSS も、元ファイルが実在するなら
       // 解決する（load 側でオンデマンドに変換する）。相対指定は
-      // importer 基準で絶対パスに直す
-      const absolute =
+      // importer 基準、"/" 始まりは fs 絶対パスと root 相対 URL の両方を試す
+      // （後者は dev の <link href="/app/....bestcss.css?direct"> 由来）
+      const candidates =
         base.startsWith(".") && importer !== undefined
-          ? path.resolve(path.dirname(stripQuery(importer)), base)
-          : base;
-      const sourceFile = absolute.slice(0, -VIRTUAL_CSS_SUFFIX.length);
-      if (fs.existsSync(sourceFile)) {
-        return asSideEffect(absolute);
+          ? [path.resolve(path.dirname(stripQuery(importer)), base)]
+          : base.startsWith("/")
+            ? [base, path.join(root, base)]
+            : [base];
+      // ?direct 等のクエリは解決後の id にも残す。落とすと Vite の CSS
+      // プラグインが「生 CSS を返すリクエスト」と識別できず、<link> に
+      // JS ラッパーが配信されてしまう
+      const query = source.slice(base.length);
+      for (const candidate of candidates) {
+        const sourceFile = candidate.slice(0, -VIRTUAL_CSS_SUFFIX.length);
+        if (fs.existsSync(sourceFile)) {
+          return asSideEffect(candidate + query);
+        }
       }
       return null;
     },
 
     async load(id) {
       if (id === RESOLVED_ROUTE_MANIFEST) {
-        // 本番はビルド時に対応表をインラインする（実行時 fs アクセス不要）。
-        // dev は null（スタイルは dev-styles 経由で注入されるため）
-        const manifestPath = routeManifestPath();
-        if (isProduction && fs.existsSync(manifestPath)) {
-          return `export default ${fs.readFileSync(manifestPath, "utf8")};`;
+        // 本番はビルド時に対応表をインラインする（実行時 fs アクセス不要）
+        if (isProduction) {
+          const manifestPath = routeManifestPath();
+          if (fs.existsSync(manifestPath)) {
+            return `export default ${fs.readFileSync(manifestPath, "utf8")};`;
+          }
+          return "export default null;";
         }
-        return "export default null;";
+        // dev はルートを走査し、Vite が生 CSS として配信する dev 用 URL
+        // （?direct）を返す。これにより renderer は dev / prod 同一の
+        // routeCssHrefs 経路で <link> を張れる。island を持たない純 SSR で
+        // クライアント JS が読み込まれなくてもスタイルが当たる（issue #3）
+        const routesDir = routesDirPath();
+        if (routesDir === null || !fs.existsSync(routesDir)) {
+          return "export default null;";
+        }
+        const manifest: Record<string, string[]> = {};
+        for (const routeFile of walkDir(routesDir)) {
+          const routeKey = path
+            .relative(routesDir, routeFile)
+            .replace(/\.[jt]sx?$/, "");
+          const files = await collectStyledFiles(this, routeFile);
+          manifest[routeKey] = files.map((file) => {
+            const cssId = file + VIRTUAL_CSS_SUFFIX;
+            const relative = path.relative(root, cssId);
+            // root 外のファイルは Vite の /@fs/ 形式で配信される
+            const urlPath = relative.startsWith("..")
+              ? `@fs${cssId}`
+              : relative;
+            return `${urlPath}?direct`;
+          });
+        }
+        return `export default ${JSON.stringify(manifest)};`;
       }
 
       if (id === RESOLVED_DEV_STYLES) {
@@ -500,21 +535,52 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
     },
 
     hotUpdate(ctx: { file: string; modules: unknown[] }) {
-      // dev-styles 経由でのみ読み込まれている仮想 CSS は、元ファイルの
-      // 変更を watcher が関連付けられないため、ここで明示的に更新対象に加える
-      const cssId = ctx.file + VIRTUAL_CSS_SUFFIX;
-      const graph = (
+      const environment = (
         this as {
           environment?: {
-            moduleGraph?: { getModuleById?: (id: string) => unknown };
+            name?: string;
+            hot?: { send?: (payload: unknown) => void };
+            moduleGraph?: {
+              getModuleById?: (id: string) => unknown;
+              getModulesByFile?: (file: string) => Set<unknown> | undefined;
+              invalidateModule?: (mod: never) => void;
+            };
           };
         }
-      ).environment?.moduleGraph;
-      const mod = graph?.getModuleById?.(cssId);
-      if (mod === undefined || mod === null) {
+      ).environment;
+      const graph = environment?.moduleGraph;
+      if (graph === undefined) {
         return;
       }
-      return [...ctx.modules, mod] as never;
+      // ルート構成やスタイル集合の変化に追従するため manifest は毎回無効化する
+      // （dev manifest は次のリクエストで再走査される。安価）
+      const manifestMod = graph.getModuleById?.(RESOLVED_ROUTE_MANIFEST);
+      if (manifestMod !== undefined && manifestMod !== null) {
+        graph.invalidateModule?.(manifestMod as never);
+      }
+      // 仮想 CSS は watcher が元ファイルと関連付けられないため、
+      // ?direct / ?hash などの変種も含めて明示的に無効化する
+      const cssId = ctx.file + VIRTUAL_CSS_SUFFIX;
+      const mods = graph.getModulesByFile?.(cssId);
+      if (mods === undefined || mods.size === 0) {
+        return;
+      }
+      const extra: unknown[] = [];
+      let linkOnly = false;
+      for (const mod of mods) {
+        graph.invalidateModule?.(mod as never);
+        extra.push(mod);
+        const importers = (mod as { importers?: Set<unknown> }).importers;
+        if ((importers?.size ?? 0) === 0) {
+          linkOnly = true;
+        }
+      }
+      // <link ?direct> 専用供給（JS の importer がいない）は HMR 境界を
+      // 持たないため、full-reload で編集を反映する（issue #3）
+      if (linkOnly && environment?.name === "client") {
+        environment.hot?.send?.({ type: "full-reload" });
+      }
+      return [...ctx.modules, ...extra] as never;
     },
 
     generateBundle: {
