@@ -9,8 +9,8 @@
     "typecheck": "pnpm -r run typecheck"
   },
   "devDependencies": {
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.9"
+    "typescript": "6.0.3",
+    "vitest": "4.1.10"
   },
   "packageManager": "pnpm@11.9.0"
 }
