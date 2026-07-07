@@ -3,4 +3,21 @@
   // 個人 OSS 共通の base rule に従う
   // https://github.com/YutaUra/renovate-oss-base
   "extends": ["github>YutaUra/renovate-oss-base"],
+  "packageRules": [
+    {
+      // engines（node など）は Renovate に触らせない。
+      // 公開パッケージの engines を特定バージョンに pin すると
+      // 利用者の install を壊すため（base preset の pin 対象から除外する）。
+      "matchDepTypes": ["engines"],
+      "enabled": false,
+    },
+    {
+      // vite6 は「Vite 6 互換テスト」専用の npm エイリアス
+      // （packages/vite-plugin の route-styles-vite6.test.ts が使用）。
+      // 更新すると通常の vite と同一バージョンを指し互換テストが無効化されるため、
+      // 更新 PR を作らせない。
+      "matchDepNames": ["vite6"],
+      "enabled": false,
+    },
+  ],
 }
