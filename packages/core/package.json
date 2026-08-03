@@ -51,9 +51,9 @@
     "lightningcss": "1.33.0",
     "magic-string": "0.30.21",
     "modern-normalize": "3.0.1",
-    "oxc-parser": "0.141.0"
+    "oxc-parser": "0.142.0"
   },
   "devDependencies": {
-    "@types/node": "26.1.1"
+    "@types/node": "26.1.2"
   }
 }
