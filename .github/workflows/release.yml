@@ -19,12 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: pnpm/action-setup@0ebf47130e4866e96fce0953f49152a61190b271 # v6.0.9
+      - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
         with:
           # OIDC publish には npm 11.5.1+ が必要なため、CI (Node 22) と
           # 揃えず npm 11 系を同梱する Node 24 を使う
-          node-version: 24.18.1
+          node-version: 24.19.0
           cache: pnpm
 
       - name: バージョン整合性チェック（ロックステップ + タグ一致）
