@@ -48,10 +48,10 @@
     "@bestcss/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "26.2.0",
-    "css-loader": "7.1.4",
+    "@types/node": "26.4.0",
+    "css-loader": "7.1.5",
     "mini-css-extract-plugin": "2.10.2",
     "typescript": "6.0.3",
-    "webpack": "5.109.2"
+    "webpack": "5.110.1"
   }
 }

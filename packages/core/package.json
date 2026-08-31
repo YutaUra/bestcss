@@ -46,14 +46,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@jridgewell/sourcemap-codec": "1.5.5",
+    "@jridgewell/sourcemap-codec": "1.6.0",
     "browserslist": "4.28.8",
     "lightningcss": "1.33.0",
     "magic-string": "0.30.21",
     "modern-normalize": "3.0.1",
-    "oxc-parser": "0.146.0"
+    "oxc-parser": "0.147.0"
   },
   "devDependencies": {
-    "@types/node": "26.2.0"
+    "@types/node": "26.4.0"
   }
 }
