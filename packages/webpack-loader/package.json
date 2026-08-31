@@ -51,7 +51,7 @@
     "@types/node": "26.4.0",
     "css-loader": "7.1.5",
     "mini-css-extract-plugin": "2.10.2",
-    "typescript": "6.0.3",
+    "typescript": "7.0.2",
     "webpack": "5.110.1"
   }
 }
