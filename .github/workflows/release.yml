@@ -24,7 +24,7 @@ jobs:
         with:
           # OIDC publish には npm 11.5.1+ が必要なため、CI (Node 22) と
           # 揃えず npm 11 系を同梱する Node 24 を使う
-          node-version: 24.19.0
+          node-version: 24.20.0
           cache: pnpm
 
       - name: バージョン整合性チェック（ロックステップ + タグ一致）
