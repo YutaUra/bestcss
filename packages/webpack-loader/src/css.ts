@@ -1,4 +1,5 @@
-import { transform } from "@bestcss/core";
+import { transform, type NamingStrategy } from "@bestcss/core";
+import { getNaming } from "./naming-registry.js";
 import { resolveTargetsCached } from "./resolve-targets.js";
 
 interface LoaderContext {
@@ -7,6 +8,7 @@ interface LoaderContext {
   getOptions?: () => {
     layers?: string[];
     targets?: string | string[] | false;
+    naming?: NamingStrategy;
   };
 }
 
@@ -23,6 +25,7 @@ export default function bestCssCssLoader(
   const result = transform(source, {
     filename: this.resourcePath,
     layers: options.layers,
+    naming: options.naming ?? getNaming(this.resourcePath),
     targets: resolveTargetsCached(
       options.targets,
       this.rootContext ?? process.cwd(),

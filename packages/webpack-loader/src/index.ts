@@ -1,5 +1,6 @@
 import path from "node:path";
-import { transform } from "@bestcss/core";
+import { transform, type NamingStrategy } from "@bestcss/core";
+import { registerNaming } from "./naming-registry.js";
 import { resolveTargetsCached } from "./resolve-targets.js";
 
 export interface BestCssLoaderOptions {
@@ -29,6 +30,13 @@ export interface BestCssLoaderOptions {
    * css loader 側の rule にも同じ options を指定すること
    */
   targets?: string | string[] | false;
+  /**
+   * クラス名 / @keyframes 名の決め方を差し替える。未指定なら
+   * 「正規化した内容の FNV-1a ハッシュ + bc / bk 接頭辞」。
+   * 注入する関数は決定的でなければならない。css loader 側の rule と
+   * プラグイン（classNamePrefixes）にも同じ値を渡すこと
+   */
+  naming?: NamingStrategy;
   /**
    * 抽出 CSS の import を発行するか。サーバービルド（SSR）は CSS を
    * 配信しないため false にする（クラス名リテラルへの変換だけが行われる）
@@ -62,9 +70,12 @@ export default function bestCssLoader(
   source: string,
 ): void {
   const options = this.getOptions?.() ?? {};
+  // 関数は css loader への JSON クエリに載らないため表で共有する
+  registerNaming(this.resourcePath, options.naming);
   const result = transform(source, {
     filename: this.resourcePath,
     layers: options.layers,
+    naming: options.naming,
     targets: resolveTargetsCached(
       options.targets,
       this.rootContext ?? process.cwd(),

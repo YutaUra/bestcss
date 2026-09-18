@@ -89,6 +89,32 @@ browserslist クエリを渡すと、ネストのフラット化とベンダー�
 use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
 ```
 
+## 命名を差し替える（naming）
+
+クラス名 / `@keyframes` 名の決め方は loader の `naming` オプションで注入する（指定できる内容は [core: 仕組み](../../core/docs/02-how-it-works.md) を参照）。既定の `bc` 接頭辞から外れた名前にする場合は、短縮対象をセレクタから収穫するためプラグインにも接頭辞を宣言する:
+
+```js
+const naming = {
+  className: ({ defaultName }) => `app-${defaultName}`,
+  classNamePrefixes: ["app-"],
+};
+
+export default {
+  module: {
+    rules: [
+      {
+        test: /\.[jt]sx?$/,
+        exclude: /node_modules/,
+        use: [{ loader: "@bestcss/webpack-loader", options: { naming } }],
+      },
+    ],
+  },
+  plugins: [new BestCssWebpackPlugin({ classNamePrefixes: ["app-"] })],
+};
+```
+
+@layer / targets と違い、css loader 側に同じ値を渡す必要はない（関数は JSON クエリで運べないため、loader 間でモジュールスコープの表を通して共有している）。ただし Turbopack（`importStyle: "query"`）では css loader の rule にも同じ `naming` を指定できる。
+
 ## webpack で SSR する
 
 client / server の 2 コンパイル構成では、クラス名短縮の一致を `ssr: true` で取る。CSS アセットを持つクライアントビルドがリネーム表を `node_modules/.bestcss/rename-map.json` へ書き出し、サーバービルドは表に従って書き換える（**ビルドは client → server の順**。Vite 版と同じ仕組み）:
@@ -119,6 +145,8 @@ Jest はビルド変換を通さないため、`@bestcss/core/testing` へ差し
 
 ## 制限
 
+- **命名戦略（naming）は loader を同一プロセスで動かす構成が前提** — css loader へのオプションはリクエスト文字列の JSON クエリで渡るため関数を運べず、命名戦略はモジュールスコープの表で loader 間を受け渡している。`thread-loader` などで loader を別プロセスに分けると JS 側と CSS 側のクラス名が食い違う
+- **命名戦略で `bc` 接頭辞から外れた名前にする場合は、プラグインにも `classNamePrefixes` を渡す** — 短縮対象は CSS アセットのセレクタから収穫するため、宣言がないと短縮が効かない
 - **Turbopack ではサイズ最適化（クラス名短縮・CSS 重複排除）が使えない** — Turbopack にはアセット後処理のフック（webpack の processAssets 相当）が存在しないため。内容ハッシュ名（`bc...`、9 文字程度）のまま配信される。抽出・ゼロランタイムは動作する
 - ルート単位の CSS 分割（`routeCssHrefs`）は Vite 版のみ（Next.js はフレームワーク自身が行うため不要）。SSR でのクラス名短縮の一致は上記 `ssr: true` で対応
 - ファイルパスに `!` または `?` を含むファイルは扱えない（webpack のリクエスト構文と衝突するため明示的にエラーになる）

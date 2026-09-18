@@ -87,6 +87,32 @@ Pass a browserslist query to enable nesting flattening and vendor prefixing (the
 use: [{ loader: "@bestcss/webpack-loader", options: { targets: "defaults" } }],
 ```
 
+## Replacing the naming strategy (naming)
+
+How class names and `@keyframes` names are derived is injected via the loader's `naming` option (see [core: How it works](/en/core/02-how-it-works) for what you can pass). If your names no longer start with the default `bc`, also declare the prefixes on the plugin so minification can still harvest them from selectors:
+
+```js
+const naming = {
+  className: ({ defaultName }) => `app-${defaultName}`,
+  classNamePrefixes: ["app-"],
+};
+
+export default {
+  module: {
+    rules: [
+      {
+        test: /\.[jt]sx?$/,
+        exclude: /node_modules/,
+        use: [{ loader: "@bestcss/webpack-loader", options: { naming } }],
+      },
+    ],
+  },
+  plugins: [new BestCssWebpackPlugin({ classNamePrefixes: ["app-"] })],
+};
+```
+
+Unlike @layer / targets, you do not need to pass the same value to the css loader: functions cannot travel through the JSON query, so the strategy is shared between the loaders through a module-scoped table. On Turbopack (`importStyle: "query"`) you may still pass `naming` on the css loader rule.
+
 ## SSR with webpack
 
 For client / server two-compilation setups, keep minified class names consistent with `ssr: true`. The compilation that owns CSS assets (client) writes a rename map to `node_modules/.bestcss/rename-map.json`, and the server compilation rewrites its JS from that map (**build client → server, in that order** — same mechanism as the Vite plugin):
@@ -117,6 +143,8 @@ Jest doesn't run the build transform, so remap to `@bestcss/core/testing` (see [
 
 ## Limitations
 
+- **The naming strategy assumes loaders run in one process** — options reach the css loader as a JSON query, which cannot carry functions, so the strategy is handed between loaders through a module-scoped table. Splitting loaders across processes (e.g. `thread-loader`) makes the JS-side and CSS-side class names disagree
+- **If your naming strategy leaves the `bc` prefix, pass `classNamePrefixes` to the plugin too** — minification targets are harvested from CSS selectors, so without the declaration nothing is shortened
 - **Size optimization (class minification / CSS dedup) is unavailable on Turbopack** — it has no post-bundle asset hook (webpack's processAssets equivalent). Content-hash names (`bc...`, ~9 chars) ship instead. Extraction and zero runtime work fine
 - Per-route CSS splitting (`routeCssHrefs`) is Vite-only (Next.js does it natively, so it isn't needed there). SSR class-name consistency is covered by `ssr: true` above
 - File paths containing `!` or `?` are rejected explicitly (they collide with webpack request syntax)

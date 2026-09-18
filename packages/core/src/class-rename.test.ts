@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { applyRename, createRenameMap } from "./class-rename.js";
+import {
+  applyRename,
+  createGeneratedSelectorPattern,
+  createRenameMap,
+} from "./class-rename.js";
 
 describe("createRenameMap", () => {
   it("使用頻度が高いクラスほど短い（または同長の）名前を割り当てる", () => {
@@ -91,5 +95,70 @@ describe("applyRename", () => {
     const js = 'const x = "bczzz";';
 
     expect(applyRename(js, map)).toBe(js);
+  });
+
+  it("bc 接頭辞でない名前（命名戦略を注入した場合）も置換する", () => {
+    const custom = new Map([
+      ["app-hero", "a"],
+      ["app_card", "b"],
+    ]);
+    const js = 'const x = "app-hero app_card";';
+
+    expect(applyRename(js, custom)).toBe('const x = "a b";');
+  });
+
+  it("名前の一部が別の名前の前方一致でも取り違えない", () => {
+    const overlapping = new Map([
+      ["app-hero", "a"],
+      ["app-hero-lg", "b"],
+    ]);
+
+    expect(applyRename(".app-hero-lg{color:red}", overlapping)).toBe(
+      ".b{color:red}",
+    );
+  });
+
+  it("空のリネーム表では何も置換しない", () => {
+    const js = 'const x = "bcaaa";';
+
+    expect(applyRename(js, new Map())).toBe(js);
+  });
+});
+
+describe("createGeneratedSelectorPattern", () => {
+  /** CSS から収穫できたクラス名の一覧 */
+  const harvest = (css: string, prefixes: string[]): string[] =>
+    [...css.matchAll(createGeneratedSelectorPattern(prefixes))].map(
+      (m) => m[1] as string,
+    );
+
+  it("既定の接頭辞で生成クラス名をセレクタから収穫する", () => {
+    const css = ".bcaaa{color:red}.bcbbb:hover{opacity:.8}";
+
+    expect(harvest(css, ["bc"])).toEqual(["bcaaa", "bcbbb"]);
+  });
+
+  it("接頭辞を持たない手書きのグローバルクラスは収穫しない", () => {
+    const css = ".container{margin:0}.bcaaa{color:red}";
+
+    expect(harvest(css, ["bc"])).toEqual(["bcaaa"]);
+  });
+
+  it("接頭辞で始まる手書きクラスは収穫しない（生成名のハッシュ部は base36 のみ）", () => {
+    const css = ".bc-container{margin:0}.bcaaa{color:red}";
+
+    expect(harvest(css, ["bc"])).toEqual(["bcaaa"]);
+  });
+
+  it("注入した命名の接頭辞を宣言すればその名前を収穫する", () => {
+    const css = ".app-bcaaa{color:red}";
+
+    expect(harvest(css, ["app-"])).toEqual(["app-bcaaa"]);
+  });
+
+  it("複数の接頭辞を宣言できる", () => {
+    const css = ".app-a{color:red}.lib-b{color:blue}";
+
+    expect(harvest(css, ["app-", "lib-"])).toEqual(["app-a", "lib-b"]);
   });
 });

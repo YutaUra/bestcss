@@ -110,6 +110,24 @@ The testing css`` computes class names with the same steps as the production tra
 
 Limitation: animation-reference resolution is confined to the block, so class names diverge from production only when referencing @keyframes defined in another block.
 
+If you pass a `naming` strategy to the plugin, the testing side needs the same value or class names will diverge. Build a strategy-aware implementation with `createCss` and map to that instead:
+
+```js
+// test/bestcss-testing.js
+import { createCss } from "@bestcss/core/testing";
+
+export const css = createCss({ naming: { /* same value as the plugin */ } });
+```
+
+```js
+// jest.config.js
+export default {
+  moduleNameMapper: {
+    "^@bestcss/core$": "<rootDir>/test/bestcss-testing.js",
+  },
+};
+```
+
 ## AI coding agents
 
 Each bestcss package ships this entire docs directory inside the npm package. Point agents at `node_modules/@bestcss/*/docs/` instead of their training data, so they work from **information that always matches the installed version**. A single line in your project's CLAUDE.md or AGENTS.md does it:

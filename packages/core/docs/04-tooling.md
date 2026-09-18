@@ -110,6 +110,24 @@ testing 版の css`` は本番の変換と同じ手順（keyframes のスコー�
 
 制限: animation 参照の解決がブロック内に閉じるため、別ブロックで定義した @keyframes を参照する場合のみ本番とクラス名がずれる。
 
+プラグインに `naming`（命名戦略）を渡している場合は、testing 側にも同じ値を渡さないとクラス名がずれる。`createCss` で戦略付きの実装を作り、それを差し替え先にする:
+
+```js
+// test/bestcss-testing.js
+import { createCss } from "@bestcss/core/testing";
+
+export const css = createCss({ naming: { /* プラグインと同じ値 */ } });
+```
+
+```js
+// jest.config.js
+export default {
+  moduleNameMapper: {
+    "^@bestcss/core$": "<rootDir>/test/bestcss-testing.js",
+  },
+};
+```
+
 ## AI コーディングエージェント
 
 bestcss の各パッケージは、この docs ディレクトリごと npm パッケージに同梱している。エージェントには学習データではなく `node_modules/@bestcss/*/docs/` を読ませることで、**インストールされているバージョンと常に一致した情報**で作業させられる。プロジェクトの CLAUDE.md や AGENTS.md に一文入れておくとよい:

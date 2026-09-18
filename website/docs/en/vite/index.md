@@ -45,6 +45,7 @@ bestCss({
   ssr?: boolean | { routesDir?: string },
   layers?: string[],                 // cascade layer order (lowest → highest)
   targets?: string | string[] | false, // supported browsers (browserslist query)
+  naming?: NamingStrategy,           // how class / @keyframes names are derived
 })
 ```
 
@@ -52,6 +53,7 @@ bestCss({
 - **ssr** — declares an SSR project. See [SSR / MPA integration](/en/vite/01-ssr)
 - **layers** — layer-order declaration required to use `@layer name { ... }` inside css``. Every name used must be declared (see [css`` syntax](/en/core/01-syntax))
 - **targets** — target browsers for nesting flattening / vendor prefixing. Auto-detects the project browserslist config when omitted; `false` disables (see [css`` syntax](/en/core/01-syntax))
+- **naming** — how class names and `@keyframes` names are derived. Defaults to "FNV-1a hash of the normalized content, prefixed with `bc` / `bk`". Injected functions must be deterministic, and the test-environment `` css`` `` needs the same value (see [How it works](/en/core/02-how-it-works))
 
 ## Testing (Vitest)
 
