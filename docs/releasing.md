@@ -1,10 +1,12 @@
 > **Stability**: 🌊 living
-> **最終更新**: 2026-07-05
+> **最終更新**: 2026-09-18
 > **直近の変更 ADR**: [ADR-0010](decisions/0010-mit-license.md)
 
 # Releasing — bestcss
 
 npm への公開手順。公開対象は `@bestcss/core` / `@bestcss/vite-plugin` / `@bestcss/webpack-loader` の 3 パッケージ（examples / bench は private）。
+
+npm のパッケージページに表示されるのは **各パッケージ直下の `README.md`**（モノレポのルート README ではない）。`files` の allowlist に書かなくても npm が自動同梱するが、`scripts/verify-packed-install.mjs` と各パッケージの `docs.test.ts` で同梱と内容を契約として固定している。npm 上では相対リンクが解決できないため、パッケージ README のリンクは絶対 URL のみ（これもテストで縛っている）。
 
 **公開は GitHub Actions（[release.yml](../.github/workflows/release.yml)）が行う。** `v*` タグの push がトリガー。npm の Trusted Publishing (OIDC) を使うため、トークンも OTP も不要で、provenance（来歴証明）が自動付与される。
 

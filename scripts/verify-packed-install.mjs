@@ -1,4 +1,4 @@
-// pack → 別プロジェクトへ install した状態で、同梱物（dist / docs）と
+// pack → 別プロジェクトへ install した状態で、同梱物（dist / docs / README）と
 // docs のクロスパッケージ相対リンク（../../core/docs/...）が解決できることを
 // 検証するスモークテスト。CI から実行する（事前に pnpm build が必要）
 import { execFileSync } from "node:child_process";
@@ -46,6 +46,11 @@ try {
     if (!fs.existsSync(inProj(pkg, "dist"))) {
       failures.push(`dist の同梱漏れ: ${pkg}（build 済みか確認）`);
     }
+    // files の allowlist に無くても npm が自動同梱する。その前提に乗ったまま
+    // 壊れても気づけないため実物で確認する
+    if (!fs.existsSync(inProj(pkg, "README.md"))) {
+      failures.push(`README.md の同梱漏れ: ${pkg}（npm 上で本文が空になる）`);
+    }
   }
 
   // docs 内の全相対リンクを、インストール後のレイアウトで検証する
@@ -73,7 +78,7 @@ try {
     process.exit(1);
   }
   console.log(
-    "OK: pack → install 後の dist / docs 同梱とリンク解決を確認した",
+    "OK: pack → install 後の dist / docs / README 同梱とリンク解決を確認した",
   );
 } finally {
   fs.rmSync(tmp, { recursive: true, force: true });

@@ -39,3 +39,28 @@ describe("同梱ドキュメント (webpack-loader)", () => {
     }
   });
 });
+
+// npm が本文に使うのはパッケージ直下の README.md で、モノレポのルート
+// README は使われない（欠けると npm 上の本文が空になる）
+describe("npm パッケージページの README (webpack-loader)", () => {
+  const readmePath = path.join(PACKAGE_ROOT, "README.md");
+
+  it("パッケージ直下に README.md がある", () => {
+    expect(fs.existsSync(readmePath)).toBe(true);
+  });
+
+  it("見出しがパッケージ名になっている", () => {
+    const content = fs.readFileSync(readmePath, "utf8");
+
+    expect(content.split("\n")[0]).toBe("# @bestcss/webpack-loader");
+  });
+
+  it("相対リンクを含まない（npm 上では解決できないため絶対 URL のみ）", () => {
+    const content = fs.readFileSync(readmePath, "utf8");
+
+    const relativeLinks = [...content.matchAll(/\]\((?!https?:|#)([^)]+)\)/g)].map(
+      (m) => m[1],
+    );
+    expect(relativeLinks).toEqual([]);
+  });
+});
