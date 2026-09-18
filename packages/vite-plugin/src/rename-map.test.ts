@@ -23,7 +23,7 @@ async function buildWith(options: {
     configFile: false,
     root: FIXTURE_ROOT,
     logLevel: "silent",
-    plugins: [bestCss(options.plugin)],
+    plugins: [bestCss({ minifyClassNames: true, ...options.plugin })],
     build: {
       write: false,
       ...(options.ssr
@@ -97,7 +97,7 @@ describe("ssr オプション: リネーム表の共有", () => {
   it("ssr 指定なしのサーバービルドは短縮しない（独自の頻度で短縮すると CSS と不整合になる）", async () => {
     const { js } = await buildWith({ ssr: true });
 
-    // デフォルト（minifyClassNames: true）でも bc ハッシュ名のまま
+    // minifyClassNames: true でも bc ハッシュ名のまま
     expect(js).toMatch(/"bc[a-z0-9]+"/);
   });
 

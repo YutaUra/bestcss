@@ -25,7 +25,7 @@ features:
     details: Write CSS next to your component, in real CSS syntax. Nesting, @media, and scoped @keyframes supported
   - icon: 📦
     title: Optimizes both HTML and CSS
-    details: One or two classes per element plus frequency-ordered class-name minification cut class attributes roughly in half. Identical styles are deduplicated automatically
+    details: One or two classes per element. Opt-in frequency-ordered class-name minification cuts class attributes roughly in half. Identical styles are deduplicated automatically
   - icon: 🔌
     title: Vite / webpack / Next.js
     details: Vite-first, with a loader for webpack and Next.js (Turbopack). Per-route CSS splitting for SSR / MPA included

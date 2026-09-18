@@ -10,7 +10,10 @@ const entry = "./app/server.ts";
 // 同じ値を渡せばよく、どの環境で何をするかはプラグインが判断する:
 // - クラス名短縮のリネーム表をビルド間で自動共有（HTML と CSS の一致）
 // - routesDir 指定でルート単位の CSS 分割（admin 専用 CSS は admin だけ）
-const bestCssPlugin = () => bestCss({ ssr: { routesDir: "app/routes" } });
+// minifyClassNames を有効にしているのは、client → server のリネーム表共有を
+// CI のビルドで実際に通し続けるため（これを通す example が他にない）
+const bestCssPlugin = () =>
+  bestCss({ ssr: { routesDir: "app/routes" }, minifyClassNames: true });
 
 export default defineConfig(({ mode }) => {
   if (mode === "client") {

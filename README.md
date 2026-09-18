@@ -120,7 +120,7 @@ Storybook（react-vite フレームワーク）はプロジェクトの `vite.co
 | Vite 以外（webpack / Next.js 等） | ✅ ⁸ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | エディタ支援（ハイライト・補完） | ✅ ⁷ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | 🟡 |
 
-¹ 1 要素 1〜2 クラス + ビルド時の頻度順短縮（[ADR-0004](docs/decisions/0004-build-time-class-name-minification.md)）。実測は [bench/RESULTS.md](bench/RESULTS.md)
+¹ 1 要素 1〜2 クラス + ビルド時の頻度順短縮（[ADR-0004](docs/decisions/0004-build-time-class-name-minification.md)）。短縮は `minifyClassNames: true` で opt-in（既定は内容ハッシュ名のままで、ビルドを跨いだ名前の安定性を優先。[ADR-0015](docs/decisions/0015-opt-in-class-name-minification.md)）。実測は [bench/RESULTS.md](bench/RESULTS.md)
 ² `identifiers: "short"` で短縮可能（頻度順ではない）
 ³ `compileClass` モードで class 列挙を 1 クラスに合成可能
 ⁴ 通常の `.css` ファイルで代替する方針（[書き方ガイド](#書き方ガイド)）。専用 API は持たない

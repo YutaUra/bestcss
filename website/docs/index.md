@@ -25,7 +25,7 @@ features:
     details: CSS をコンポーネントの隣に、生の CSS 文法で書ける。ネスト・@media・スコープ付き @keyframes に対応
   - icon: 📦
     title: HTML / CSS 両方のサイズ最適化
-    details: 1 要素 1〜2 クラス + 頻度順のクラス名短縮で class 属性を約半分に。同一スタイルは自動で重複排除
+    details: 1 要素 1〜2 クラス。頻度順のクラス名短縮（opt-in）で class 属性を約半分に。同一スタイルは自動で重複排除
   - icon: 🔌
     title: Vite / webpack / Next.js
     details: Vite ファースト。webpack と Next.js (Turbopack) にも loader で対応。SSR / MPA のルート単位 CSS 分割も

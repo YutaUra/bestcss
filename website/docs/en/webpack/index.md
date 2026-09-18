@@ -27,8 +27,9 @@ export default {
   },
   plugins: [
     new MiniCssExtractPlugin(),
-    // size optimization (frequency-ordered class minification + CSS dedup)
-    new BestCssWebpackPlugin(),
+    // CSS dedup always runs; frequency-ordered class minification is
+    // opt-in via minifyClassNames (content-hash names ship by default)
+    new BestCssWebpackPlugin({ minifyClassNames: true }),
   ],
 };
 ```
@@ -115,7 +116,7 @@ Unlike @layer / targets, you do not need to pass the same value to the css loade
 
 ## SSR with webpack
 
-For client / server two-compilation setups, keep minified class names consistent with `ssr: true`. The compilation that owns CSS assets (client) writes a rename map to `node_modules/.bestcss/rename-map.json`, and the server compilation rewrites its JS from that map (**build client → server, in that order** — same mechanism as the Vite plugin):
+For client / server two-compilation setups using `minifyClassNames: true`, keep minified class names consistent with `ssr: true` (with the default content-hash names you need neither the shared map nor the build order). The compilation that owns CSS assets (client) writes a rename map to `node_modules/.bestcss/rename-map.json`, and the server compilation rewrites its JS from that map (**build client → server, in that order** — same mechanism as the Vite plugin):
 
 ```js
 // client config

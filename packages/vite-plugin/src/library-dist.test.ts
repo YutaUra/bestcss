@@ -66,7 +66,7 @@ async function buildConsumer(): Promise<{ js: string; css: string }> {
     configFile: false,
     root: CONSUMER,
     logLevel: "silent",
-    plugins: [bestCss()],
+    plugins: [bestCss({ minifyClassNames: true })],
     build: {
       write: false,
       lib: {

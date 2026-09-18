@@ -4,7 +4,7 @@ When publishing a UI library written with bestcss to npm, use **precompiled dist
 
 ## On the library side
 
-Build with Vite's lib mode and **disable class-name minification**:
+Build with Vite's lib mode and **leave class-name minification off** (it is off by default; spelling it out documents the intent):
 
 ```ts
 // vite.config.ts (library)
@@ -16,7 +16,7 @@ export default defineConfig({
 });
 ```
 
-Why `minifyClassNames: false`: minified names (a, b, c...) are build-local frequency rankings — a library shipping them would collide with the consumer app's own minified names. **bc names are content hashes (content-addressed), so they never collide**, and final minification is delegated to the consumer's build.
+Why it must stay off: minified names (a, b, c...) are build-local frequency rankings — a library shipping them would collide with the consumer app's own minified names. **bc names are content hashes (content-addressed), so they never collide**, and final minification is delegated to the consumer's build.
 
 Declare the CSS export and sideEffects in package.json:
 
@@ -44,7 +44,7 @@ import { Button } from "your-ui";
 If the consumer also uses bestcss, convergence kicks in:
 
 - **Duplicate styles collapse**: identical declarations in the library and the app converge to the same class name via content hashing, producing a single rule in shipped CSS
-- **Library class names get minified too**: the consumer's production build also harvests bc names from CSS asset selectors, so library classes get renamed to a, b, c... consistently across JS and CSS (`BestCssWebpackPlugin` does the same for webpack consumers)
+- **Library class names get minified too**: when the consumer builds with `minifyClassNames: true`, it also harvests bc names from CSS asset selectors, so library classes get renamed to a, b, c... consistently across JS and CSS (`BestCssWebpackPlugin` does the same for webpack consumers)
 
 Both behaviors are locked in as contracts by tests (`library-dist.test.ts`).
 

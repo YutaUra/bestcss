@@ -4,7 +4,10 @@ import path from "node:path";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import webpack from "webpack";
 import { afterEach, describe, expect, it } from "vitest";
-import { BestCssWebpackPlugin } from "./plugin.js";
+import {
+  BestCssWebpackPlugin,
+  type BestCssWebpackPluginOptions,
+} from "./plugin.js";
 
 const FIXTURE_DIR = path.resolve(import.meta.dirname, "__fixtures__");
 const LOADER = path.resolve(import.meta.dirname, "../dist/index.js");
@@ -18,7 +21,11 @@ afterEach(() => {
   }
 });
 
-async function buildWithPlugin(entryContent: string): Promise<{
+async function buildWithPlugin(
+  entryContent: string,
+  // 製品の既定は false。このファイルは短縮が主題なので既定で有効にする
+  pluginOptions: BestCssWebpackPluginOptions = { minifyClassNames: true },
+): Promise<{
   js: string;
   css: string;
 }> {
@@ -52,7 +59,9 @@ async function buildWithPlugin(entryContent: string): Promise<{
       new MiniCssExtractPlugin({ filename: "out.css" }),
       // プラグインは webpack を import しない構造型のため、型上は
       // WebpackPluginInstance と一致しない（実行時互換）
-      new BestCssWebpackPlugin() as unknown as webpack.WebpackPluginInstance,
+      new BestCssWebpackPlugin(
+        pluginOptions,
+      ) as unknown as webpack.WebpackPluginInstance,
     ],
   });
 
@@ -77,6 +86,18 @@ async function buildWithPlugin(entryContent: string): Promise<{
 }
 
 describe("BestCssWebpackPlugin", () => {
+  it("デフォルトではクラス名を短縮せず、内容ハッシュ名のまま出荷する", async () => {
+    const { js, css } = await buildWithPlugin(
+      `import { button } from "${path
+        .join(FIXTURE_DIR, "styled.js")
+        .replaceAll("\\", "/")}";\nconsole.log(button);\n`,
+      {},
+    );
+
+    expect(js).toMatch(/\bbc[0-9a-z]{7}\b/);
+    expect(css).toMatch(/\.bc[0-9a-z]{7}/);
+  });
+
   it("クラス名が頻度順の短い名前に短縮され、JS と CSS で一致する", async () => {
     const { js, css } = await buildWithPlugin(
       `import { button } from "${path

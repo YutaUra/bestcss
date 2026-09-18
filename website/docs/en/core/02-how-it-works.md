@@ -32,7 +32,7 @@ The runtime `css` function is a stub that is expected to be compiled away; if it
   ```
 
   Normalization is limited to formatting, though. Equivalent value spellings (`#ffffff` vs `#fff`) and whitespace around combinators (`&>.b` vs `& > .b`) still yield different class names
-- **Frequency-ordered minification** (production builds only): once all classes are known, they are bijectively renamed to `a`, `b`, ... in usage-frequency order. Class attributes shrink dramatically (-48% in our benchmark)
+- **Frequency-ordered minification** (opt in with `minifyClassNames: true`; production builds only): once all classes are known, they are bijectively renamed to `a`, `b`, ... in usage-frequency order. Class attributes shrink dramatically (-48% in our benchmark). It is off by default because minified names come from a whole-bundle frequency ranking, so adding a single component shifts existing class names, whereas content-hash names are stable across builds
 - `@keyframes` names are also scoped with content hashes (`bk` + base36)
 - **Naming is replaceable**: to change the prefix or the hash algorithm, inject a strategy via the `naming` option (see [Replacing the naming strategy](#replacing-the-naming-strategy))
 

@@ -41,7 +41,7 @@ export const Button = () => <button className={button}>Click</button>;
 
 ```ts
 bestCss({
-  minifyClassNames?: boolean,        // デフォルト true
+  minifyClassNames?: boolean,        // デフォルト false（opt-in）
   ssr?: boolean | { routesDir?: string },
   layers?: string[],                 // カスケードレイヤーの順序（下位 → 上位）
   targets?: string | string[] | false, // 対応ブラウザ（browserslist クエリ）
@@ -49,7 +49,7 @@ bestCss({
 })
 ```
 
-- **minifyClassNames** — 本番ビルドでクラス名を使用頻度順の短い名前（`a`, `b`, ...）へ振り直す。dev では常に内容ハッシュ名（`bc...`）。`false` は SSR した HTML を長期キャッシュする等、ビルド間の名前安定性を優先したい場合
+- **minifyClassNames** — 本番ビルドでクラス名を使用頻度順の短い名前（`a`, `b`, ...）へ振り直す（ベンチで class 属性 -48%、合計 gzip -14%）。**opt-in**（既定は無効）で、既定では内容ハッシュ名（`bc...`）のまま出荷される。短縮名はバンドル全体の頻度順で決まるため、コンポーネントを 1 つ足すだけで既存クラスの名前がずれる — 内容ハッシュ名はビルドを跨いで安定するので、長期キャッシュを崩さない側を既定にしている。サイズを詰める本番ビルドで `true` にする
 - **ssr** — SSR プロジェクトの宣言。[SSR / MPA 統合](./01-ssr.md) を参照
 - **layers** — css`` 内で `@layer name { ... }` を使うための順序宣言。使用する名前はすべて宣言が必要（詳細は [core: css`` の文法](../../core/docs/01-syntax.md)）
 - **targets** — ネストのフラット化・ベンダープレフィックス付与の対象ブラウザ。未指定ならプロジェクトの browserslist 設定を自動検出、`false` で無効化（詳細は [core: css`` の文法](../../core/docs/01-syntax.md)）
