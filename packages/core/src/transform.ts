@@ -3,8 +3,8 @@ import { transform as transformCss, type Targets } from "lightningcss";
 import MagicString, { type SourceMap } from "magic-string";
 import { parseSync } from "oxc-parser";
 import { extractLayerBlocks } from "./cascade-layers.js";
-import { generateClassName } from "./class-name.js";
 import { extractKeyframes, rewriteAnimationNames } from "./keyframes.js";
+import { resolveNaming, type NamingStrategy } from "./naming.js";
 
 /** ユーザーが css をここから import したときだけ変換対象とする */
 const CSS_TAG_MODULE = "@bestcss/core";
@@ -25,6 +25,11 @@ export interface TransformOptions {
    * browserslist クエリからの変換は resolveTargets を使う
    */
   targets?: Targets;
+  /**
+   * クラス名 / @keyframes 名の決め方。未指定なら「正規化した内容の
+   * FNV-1a ハッシュ + bc / bk 接頭辞」になる
+   */
+  naming?: NamingStrategy;
 }
 
 export interface TransformResult {
@@ -159,6 +164,7 @@ export function transform(
   }
 
   const ms = new MagicString(code);
+  const naming = resolveNaming(options.naming);
   const classNames: string[] = [];
 
   // 1 パス目: 全ブロックから @keyframes を抽出する。
@@ -178,7 +184,11 @@ export function transform(
       );
     }
     const rawCss = tag.quasi.quasis[0]?.value.raw ?? "";
-    const { css: blockCss, keyframes } = extractKeyframes(rawCss);
+    const { css: blockCss, keyframes } = extractKeyframes(
+      rawCss,
+      naming,
+      options.filename,
+    );
     for (const kf of keyframes) {
       keyframesRenames.set(kf.name, kf.scopedName);
       // scopedName は内容ハッシュなので、同一内容はここで自然に 1 つに収束する
@@ -221,7 +231,7 @@ export function transform(
     const rewritten = rewriteAnimationNames(block.css, keyframesRenames);
     // クラス名はレイヤー構文込みでハッシュする（同一宣言でもレイヤーが
     // 違えばカスケード上は別物のため、別クラスに分離する）
-    const className = generateClassName(rewritten);
+    const className = naming.className(rewritten, options.filename);
     classNames.push(className);
     const originLine = lineNumberAt(code, block.tag.start);
     const { css: unlayeredCss, layers: layerBlocks } =

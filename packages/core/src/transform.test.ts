@@ -385,3 +385,74 @@ describe("ブラウザターゲット（targets）", () => {
     expect(result?.css).toContain("&:hover");
   });
 });
+
+describe("命名（naming）", () => {
+  it("書式だけが違う css`` は同一のクラス名に収束する", () => {
+    // Arrange
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const a = css\`color: red;\`;`,
+      `const b = css\``,
+      `  /* 同じスタイル */`,
+      `  color: red;`,
+      `\`;`,
+    ].join("\n");
+
+    // Act
+    const result = transform(code, { filename: FILENAME });
+
+    // Assert
+    expect(extractClassName(result!.code, "a")).toBe(
+      extractClassName(result!.code, "b"),
+    );
+    expect(new Set(result!.classNames).size).toBe(1);
+  });
+
+  it("naming.className でクラス名の決め方を差し替えられる", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const button = css\`color: red;\`;`,
+    ].join("\n");
+
+    const result = transform(code, {
+      filename: FILENAME,
+      naming: { className: ({ defaultName }) => `app-${defaultName}` },
+    });
+
+    const className = extractClassName(result!.code, "button");
+    expect(className).toMatch(/^app-bc/);
+    expect(result!.css).toContain(`.${className}`);
+    expect(result!.classNames).toEqual([className]);
+  });
+
+  it("naming.hash はクラス名と @keyframes 名の両方に効く", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const button = css\`@keyframes fade { to { opacity: 1 } } animation: fade 1s;\`;`,
+    ].join("\n");
+
+    const result = transform(code, {
+      filename: FILENAME,
+      naming: { hash: () => "zzz" },
+    });
+
+    expect(extractClassName(result!.code, "button")).toBe("bczzz");
+    expect(result!.css).toContain("@keyframes bkzzz");
+    // Lightning CSS がショートハンドの語順を正規化するため語順には依存しない
+    expect(result!.css).toMatch(/animation:[^;]*bkzzz/);
+  });
+
+  it("naming.className が CSS 識別子でない名前を返したらエラーにする", () => {
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `const button = css\`color: red;\`;`,
+    ].join("\n");
+
+    expect(() =>
+      transform(code, {
+        filename: FILENAME,
+        naming: { className: () => "1bad" },
+      }),
+    ).toThrow(/src\/Button\.tsx/);
+  });
+});

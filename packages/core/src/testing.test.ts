@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { css } from "./testing.js";
+import { createCss, css } from "./testing.js";
 import { transform } from "./transform.js";
 
 /** 同じブロックを本番の変換に通したときのクラス名を得る */
@@ -41,5 +41,27 @@ describe("テスト実行環境向けの css``（@bestcss/core/testing）", () =
 
     // @ts-expect-error 補間は型レベルでも拒否される（本番の css と同じ契約）
     expect(() => css`color: ${color};`).toThrow(/補間/);
+  });
+
+  it("createCss に命名戦略を渡すと本番の naming オプションと同じ名前になる", () => {
+    // Arrange
+    const naming = {
+      className: ({ defaultName }: { defaultName: string }) =>
+        `app-${defaultName}`,
+    };
+    const block = "padding: 16px;";
+    const code = [
+      `import { css } from "@bestcss/core";`,
+      `export const a = css\`${block}\`;`,
+    ].join("\n");
+
+    // Act
+    const testingName = createCss({ naming })`padding: 16px;`;
+
+    // Assert
+    expect(testingName).toBe(
+      transform(code, { filename: "parity.tsx", naming })?.classNames[0],
+    );
+    expect(testingName).toMatch(/^app-bc[0-9a-z]{7}$/);
   });
 });

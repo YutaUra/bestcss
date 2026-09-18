@@ -16,9 +16,61 @@
 
 ## クラス名
 
-- **内容ハッシュ**: クラス名は CSS 内容の FNV-1a ハッシュ（`bc` + base36）。同一内容はファイル・ビルド・バンドラーを跨いで**同一クラス名に収束**する。これが重複排除と SSR での HTML/CSS 一致の土台
+- **内容ハッシュ**: クラス名は CSS 内容の FNV-1a ハッシュ（`bc` + base36 7 桁、常に 9 文字）。同一内容はファイル・ビルド・バンドラーを跨いで**同一クラス名に収束**する。これが重複排除と SSR での HTML/CSS 一致の土台
+- **書式ゆらぎは無視される**: ハッシュを取る前に CSS を正規化するため、インデント幅・改行・コメント・末尾セミコロンの違いではクラス名が変わらない。再インデントや Prettier の設定変更でクラス名が総入れ替えになり、長期キャッシュが失効することがない
+
+  ```ts
+  // この 3 つは同じクラス名になる
+  css`padding:8px`;
+  css`
+    padding: 8px;
+  `;
+  css`
+    /* 余白 */
+    padding: 8px;
+  `;
+  ```
+
+  ただし正規化は書式に絞っている。値の等価表記（`#ffffff` と `#fff`）や結合子まわりの空白（`&>.b` と `& > .b`）は別のクラス名になる
 - **頻度順短縮**（本番ビルドのみ）: 全クラス確定後、使用頻度順に `a`, `b`, ... へ全単射リネームされる。HTML の class 属性が大幅に縮む（ベンチで -48%）
 - `@keyframes` の名前も内容ハッシュ（`bk` + base36）でスコープされる
+- **命名は差し替えられる**: 接頭辞を変えたい、ハッシュアルゴリズムを変えたい場合は `naming` オプションで注入する（[命名を差し替える](#命名を差し替える)）
+
+## 命名を差し替える
+
+クラス名 / `@keyframes` 名の決め方は、プラグイン（`@bestcss/vite-plugin` の `naming`、`@bestcss/webpack-loader` の `naming`）から注入できる。ビルド時にしか呼ばれないため、ゼロランタイムは崩れない。
+
+```ts
+bestCss({
+  naming: {
+    // ハッシュアルゴリズムだけ差し替える（クラス名と @keyframes 名の両方に効く）
+    hash: (normalizedCss) => createHash("sha256").update(normalizedCss).digest("hex").slice(0, 8),
+
+    // 名前そのものを決める。defaultName は既定の実装が返す名前
+    className: ({ defaultName, normalizedCss, css, filename }) => `app-${defaultName}`,
+    keyframesName: ({ originalName, defaultName }) => `app-${originalName}-${defaultName}`,
+
+    // 既定の "bc" から外れた名前にする場合は、生成名を見分けるための接頭辞も宣言する
+    classNamePrefixes: ["app-"],
+  },
+})
+```
+
+注入する関数に求められる性質:
+
+- **決定的であること** — 同じ入力に常に同じ名前を返す。dev と build、client と server ビルドで名前が食い違うと、SSR した HTML と配信 CSS が一致しない
+- **異なる CSS に同じ名前を与えないこと** — 別スタイルの誤適用になる
+- 返す名前は英字または `_` で始まり、英数字・`_`・`-` のみを含むこと（違反するとビルドエラー）
+
+`classNamePrefixes` が必要な理由: ビルド時のクラス名短縮は、プリコンパイル配布されたライブラリの CSS など変換を通らない経路の名前を**セレクタから収穫する**。既定の `bc` から外れた名前にすると接頭辞でしか判別できないため、宣言がないとその経路の名前が短縮されずに残る。
+
+テスト実行環境の `` css`` ``（[ツール連携](./04-tooling.md)）にも同じ戦略を渡す必要がある:
+
+```ts
+import { createCss } from "@bestcss/core/testing";
+
+export const css = createCss({ naming: { /* プラグインと同じ値 */ } });
+```
 
 ## CSS の重複排除
 

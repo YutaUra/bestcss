@@ -45,6 +45,7 @@ bestCss({
   ssr?: boolean | { routesDir?: string },
   layers?: string[],                 // カスケードレイヤーの順序（下位 → 上位）
   targets?: string | string[] | false, // 対応ブラウザ（browserslist クエリ）
+  naming?: NamingStrategy,           // クラス名 / @keyframes 名の決め方
 })
 ```
 
@@ -52,6 +53,7 @@ bestCss({
 - **ssr** — SSR プロジェクトの宣言。[SSR / MPA 統合](./01-ssr.md) を参照
 - **layers** — css`` 内で `@layer name { ... }` を使うための順序宣言。使用する名前はすべて宣言が必要（詳細は [core: css`` の文法](../../core/docs/01-syntax.md)）
 - **targets** — ネストのフラット化・ベンダープレフィックス付与の対象ブラウザ。未指定ならプロジェクトの browserslist 設定を自動検出、`false` で無効化（詳細は [core: css`` の文法](../../core/docs/01-syntax.md)）
+- **naming** — クラス名 / `@keyframes` 名の決め方。未指定なら「正規化した内容の FNV-1a ハッシュ + `bc` / `bk` 接頭辞」。注入する関数は決定的でなければならず、テスト実行環境の `` css`` `` にも同じ値を渡す（詳細は [core: 仕組み](../../core/docs/02-how-it-works.md)）
 
 ## テスト（Vitest）
 

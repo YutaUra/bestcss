@@ -1,6 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { applyRename, createRenameMap, dedupeCss } from "@bestcss/core";
+import {
+  applyRename,
+  createGeneratedSelectorPattern,
+  createNamePattern,
+  createRenameMap,
+  dedupeCss,
+  DEFAULT_CLASS_NAME_PREFIXES,
+} from "@bestcss/core";
 
 export interface BestCssWebpackPluginOptions {
   /**
@@ -26,6 +33,16 @@ export interface BestCssWebpackPluginOptions {
    * Vite プラグインの ssr オプションと同じ仕組み（ADR-0006）
    */
   ssr?: boolean;
+  /**
+   * 生成クラス名を CSS のセレクタから見分けるための接頭辞
+   * （loader の naming.classNamePrefixes と同じ値を渡す）。
+   *
+   * 短縮対象は CSS アセットのセレクタから収穫するため、命名戦略を注入して
+   * 既定の "bc" 接頭辞から外れた名前にした場合はここでも宣言が必要
+   *
+   * @default ["bc"]
+   */
+  classNamePrefixes?: string[];
 }
 
 // webpack の型に依存しない構造型。プラグインは compiler.webpack 経由で
@@ -77,11 +94,14 @@ export class BestCssWebpackPlugin {
   private readonly minifyClassNames: boolean;
   private readonly layers: string[] | undefined;
   private readonly ssr: boolean;
+  private readonly classNamePrefixes: readonly string[];
 
   constructor(options: BestCssWebpackPluginOptions = {}) {
     this.minifyClassNames = options.minifyClassNames ?? true;
     this.layers = options.layers;
     this.ssr = options.ssr ?? false;
+    this.classNamePrefixes =
+      options.classNamePrefixes ?? DEFAULT_CLASS_NAME_PREFIXES;
   }
 
   apply(compiler: CompilerLike): void {
@@ -152,10 +172,11 @@ export class BestCssWebpackPlugin {
           }
 
           const generated = new Set<string>();
+          const selectorPattern = createGeneratedSelectorPattern(
+            this.classNamePrefixes,
+          );
           for (const name of cssNames) {
-            for (const matched of readAsset(name).matchAll(
-              /\.(bc[a-z0-9]+)/g,
-            )) {
+            for (const matched of readAsset(name).matchAll(selectorPattern)) {
               generated.add(matched[1] as string);
             }
           }
@@ -167,10 +188,9 @@ export class BestCssWebpackPlugin {
           const frequencies = new Map<string, number>(
             [...generated].map((name) => [name, 0]),
           );
+          const namePattern = createNamePattern(generated);
           for (const name of jsNames) {
-            for (const matched of readAsset(name).matchAll(
-              /\bbc[a-z0-9]+\b/g,
-            )) {
+            for (const matched of readAsset(name).matchAll(namePattern)) {
               const count = frequencies.get(matched[0]);
               if (count !== undefined) {
                 frequencies.set(matched[0], count + 1);

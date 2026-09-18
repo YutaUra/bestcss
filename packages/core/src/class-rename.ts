@@ -36,16 +36,66 @@ export function createRenameMap(
 }
 
 /**
+ * 生成名が「CSS 識別子として丸ごと一致する」箇所にだけ当たる正規表現を作る。
+ *
+ * \b ではなく前後の否定先読み / 後読みを使う理由:
+ * \b は "-" を単語境界とみなすため、app-hero という名前で app-hero-lg の
+ * 前半に当たってしまう。CSS 識別子に使える文字で境界を定義する必要がある
+ */
+export function createNamePattern(names: Iterable<string>): RegExp {
+  // 長い名前を先に並べる: 正規表現の選択は左から最初に一致した枝を採るため、
+  // app-hero を先に置くと app-hero-lg が前半だけ一致してしまう
+  const alternatives = [...names]
+    .sort((a, b) => b.length - a.length)
+    .map((name) => name.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&"))
+    .join("|");
+  return new RegExp(
+    `(?<![A-Za-z0-9_-])(?:${alternatives})(?![A-Za-z0-9_-])`,
+    "g",
+  );
+}
+
+/**
+ * CSS のセレクタから、bestcss が生成したクラス名を収穫する正規表現を作る。
+ * transform を通らない経路（プリコンパイル配布されたライブラリの CSS、
+ * ADR-0013）の名前は、接頭辞でしか見分けられない。
+ *
+ * 接頭辞の後ろを [a-z0-9]+ に絞り、CSS 識別子に使える文字すべてを
+ * 許していない理由: 生成名のハッシュ部は必ず base36（小文字英数字）で、
+ * 広げると利用者が手書きした .bc-container のようなクラスまで生成名と
+ * 誤認して短縮してしまう（手書きクラスを壊す）
+ */
+export function createGeneratedSelectorPattern(
+  prefixes: readonly string[],
+): RegExp {
+  const alternatives = prefixes
+    .map((prefix) => prefix.replace(/[.*+?^${}()|[\]\\-]/g, "\\$&"))
+    .join("|");
+  return new RegExp(`\\.((?:${alternatives})[a-z0-9]+)`, "g");
+}
+
+/** リネーム表ごとに正規表現をキャッシュする（表はビルド中に使い回される） */
+const patternCache = new WeakMap<Map<string, string>, RegExp>();
+
+/**
  * テキスト（JS チャンク / CSS アセット）内のクラス名をリネーム表に従って置換する。
- * bc 接頭辞の生成名だけを対象にするため、ユーザーコードの他の文字列を
- * 誤って書き換えることはない
+ *
+ * 接頭辞の正規表現ではなくリネーム表のキーで照合する理由:
+ * 命名戦略（NamingStrategy）を注入すると生成名が "bc" 始まりでなくなるため、
+ * 接頭辞に依存すると短縮が効かなくなる。表のキーで照合すれば、名前の形が
+ * どうであれ「自分が生成した名前だけ」を対象にできる
  */
 export function applyRename(
   text: string,
   renameMap: Map<string, string>,
 ): string {
-  return text.replace(
-    /\bbc[a-z0-9]+\b/g,
-    (matched) => renameMap.get(matched) ?? matched,
-  );
+  if (renameMap.size === 0) {
+    return text;
+  }
+  let pattern = patternCache.get(renameMap);
+  if (pattern === undefined) {
+    pattern = createNamePattern(renameMap.keys());
+    patternCache.set(renameMap, pattern);
+  }
+  return text.replace(pattern, (matched) => renameMap.get(matched) ?? matched);
 }

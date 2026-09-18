@@ -3,12 +3,16 @@ import path from "node:path";
 import {
   applyRename,
   collectImportSources,
+  contentHash,
+  createGeneratedSelectorPattern,
+  createNamePattern,
   createRenameMap,
   dedupeCss,
-  generateClassName,
   minifyCss,
+  resolveNaming,
   transform,
   resolveTargets,
+  type NamingStrategy,
   type Targets,
 } from "@bestcss/core";
 import type { Plugin } from "vite";
@@ -91,6 +95,21 @@ export interface BestCssOptions {
    */
   layers?: string[];
   /**
+   * クラス名 / @keyframes 名の決め方を差し替える。
+   *
+   * 未指定なら「正規化した内容の FNV-1a ハッシュ + bc / bk 接頭辞」。
+   * 注入する関数は決定的でなければならない（dev と build、client と
+   * server ビルドで名前が食い違うと SSR した HTML と CSS が一致しない）。
+   * テスト実行環境の css``（@bestcss/core/testing の createCss）にも
+   * 同じ値を渡すこと
+   *
+   * @example
+   * bestCss({
+   *   naming: { className: ({ defaultName }) => `app-${defaultName}` },
+   * })
+   */
+  naming?: NamingStrategy;
+  /**
    * 対応ブラウザの browserslist クエリ。指定するとネストのフラット化や
    * ベンダープレフィックス付与などのダウンレベルが行われる。
    *
@@ -107,6 +126,8 @@ export interface BestCssOptions {
 export function bestCss(options: BestCssOptions = {}): Plugin {
   const minifyClassNames = options.minifyClassNames ?? true;
   const layers = options.layers;
+  const naming = options.naming;
+  const classNamePrefixes = resolveNaming(naming).classNamePrefixes;
   const ssr =
     options.ssr === undefined || options.ssr === false
       ? null
@@ -222,6 +243,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       filename: sourceFile,
       layers,
       targets,
+      naming,
     });
     sourceMtimes.set(base, mtime);
     if (result === null) {
@@ -311,7 +333,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       if (layers !== undefined && minified.includes("@layer")) {
         minified = dedupeCss(`@layer ${layers.join(", ")};\n${minified}`);
       }
-      const fileName = `assets/bestcss.${generateClassName(minified)}.css`;
+      const fileName = `assets/bestcss.${contentHash(minified)}.css`;
       if (!(fileName in bundle)) {
         ctx.emitFile({ type: "asset", fileName, source: minified });
       }
@@ -529,7 +551,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       if (!TRANSFORM_TARGET_RE.test(id) || id.includes("/node_modules/")) {
         return null;
       }
-      const result = transform(code, { filename: id, layers, targets });
+      const result = transform(code, { filename: id, layers, targets, naming });
       if (result === null) {
         // css`` が全て削除された場合、新しいコードに import が残らないため
         // Vite の HMR prune が古い style 要素を除去する。ここでの後始末は不要
@@ -565,7 +587,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
       // URL 単位でキャッシュするため、サーバー側の内容更新だけでは再取得されない。
       // モジュールグラフの invalidate（?t= 方式）はグラフの内部状態に依存して
       // 空振りし得たため、内容が変われば URL が必ず変わるこの方式にした
-      const versionedCssId = `${cssId}?hash=${generateClassName(result.css)}`;
+      const versionedCssId = `${cssId}?hash=${contentHash(result.css)}`;
       // import 行は map 生成後の末尾追記だが、行の追加は既存行の
       // マッピングをずらさないためソースマップはそのまま有効
       return {
@@ -692,7 +714,7 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
           for (const [fileName, output] of Object.entries(bundle)) {
             if (output.type === "asset" && fileName.endsWith(".css")) {
               for (const matched of String(output.source).matchAll(
-                /\.(bc[a-z0-9]+)/g,
+                createGeneratedSelectorPattern(classNamePrefixes),
               )) {
                 knownNames.add(matched[1] as string);
               }
@@ -708,11 +730,12 @@ export function bestCss(options: BestCssOptions = {}): Plugin {
             const frequencies = new Map<string, number>(
               [...knownNames].map((name) => [name, 0]),
             );
+            const namePattern = createNamePattern(knownNames);
             for (const output of Object.values(bundle)) {
               if (output.type !== "chunk") {
                 continue;
               }
-              for (const matched of output.code.matchAll(/\bbc[a-z0-9]+\b/g)) {
+              for (const matched of output.code.matchAll(namePattern)) {
                 const count = frequencies.get(matched[0]);
                 if (count !== undefined) {
                   frequencies.set(matched[0], count + 1);
