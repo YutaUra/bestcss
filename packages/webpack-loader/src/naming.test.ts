@@ -21,7 +21,10 @@ afterEach(() => {
 
 async function buildWithNaming(
   loaderOptions: BestCssLoaderOptions,
-  pluginOptions: { classNamePrefixes?: string[] } = {},
+  pluginOptions: {
+    classNamePrefixes?: string[];
+    minifyClassNames?: boolean;
+  } = {},
 ): Promise<{ js: string; css: string }> {
   outDir = fs.mkdtempSync(path.join(os.tmpdir(), "bestcss-wp-naming-"));
   const compiler = webpack({
@@ -84,7 +87,7 @@ describe("webpack loader: naming オプション", () => {
           classNamePrefixes: ["app-"],
         },
       },
-      { classNamePrefixes: ["app-"] },
+      { classNamePrefixes: ["app-"], minifyClassNames: true },
     );
 
     expect(css).not.toContain("app-bc");

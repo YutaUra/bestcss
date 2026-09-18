@@ -15,7 +15,7 @@ bestCss({ ssr: true })
 
 This enables, internally:
 
-1. **Automatic sharing of the class-rename map across builds** — SSR'd HTML and served CSS agree on minified names. Build client → server (violations fail loudly)
+1. **Automatic sharing of the class-rename map across builds** (only with `minifyClassNames: true`) — SSR'd HTML and served CSS agree on minified names. Build client → server (violations fail loudly)
 2. **No CSS imports in the SSR build** — the server bundle only needs class names; serving CSS is the client build's job
 3. **Per-route CSS splitting** (with `routesDir`) — route-specific CSS ships only on that route; shared CSS ships as shared files
 
@@ -66,6 +66,6 @@ import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
 
 No client entry, no dev-only entry. Dev and prod use the same path.
 
-## Opting out of the rename map
+## Opting out of the rename map (the default)
 
-With `minifyClassNames: false`, output keeps content-hash names (`bc...`). Content hashes agree deterministically across independent builds, so HTML and CSS match without sharing a map (see [How it works](/en/core/02-how-it-works)).
+By default (`minifyClassNames` unset), output keeps content-hash names (`bc...`). Content hashes agree deterministically across independent builds, so HTML and CSS match **without sharing a map and without the client → server build order** (see [How it works](/en/core/02-how-it-works)). Set `minifyClassNames: true` only when you want the size win and can accept the build-order constraint.

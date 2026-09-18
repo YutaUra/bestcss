@@ -81,6 +81,7 @@ async function buildClient(dir: string): Promise<{ js: string; css: string }> {
       new MiniCssExtractPlugin({ filename: "out.css" }),
       new BestCssWebpackPlugin({
         ssr: true,
+        minifyClassNames: true,
       }) as unknown as webpack.WebpackPluginInstance,
     ],
   });
@@ -115,6 +116,7 @@ async function buildServer(dir: string): Promise<string> {
     plugins: [
       new BestCssWebpackPlugin({
         ssr: true,
+        minifyClassNames: true,
       }) as unknown as webpack.WebpackPluginInstance,
     ],
   });

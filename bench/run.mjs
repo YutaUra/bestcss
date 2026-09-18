@@ -12,7 +12,8 @@ const VARIANTS = [
   {
     name: "bestcss",
     entry: "src/bestcss/page.ts",
-    plugins: () => [bestCss()],
+    // このベンチはサイズ最適化込みの実力を測るため短縮を有効にする
+    plugins: () => [bestCss({ minifyClassNames: true })],
   },
   {
     name: "css-modules",

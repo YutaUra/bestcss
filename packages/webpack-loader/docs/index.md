@@ -29,8 +29,9 @@ export default {
   },
   plugins: [
     new MiniCssExtractPlugin(),
-    // サイズ最適化（クラス名の頻度順短縮 + CSS の重複排除）
-    new BestCssWebpackPlugin(),
+    // CSS の重複排除は常に行う。クラス名の頻度順短縮は
+    // minifyClassNames: true で opt-in（既定は内容ハッシュ名のまま）
+    new BestCssWebpackPlugin({ minifyClassNames: true }),
   ],
 };
 ```
@@ -117,7 +118,7 @@ export default {
 
 ## webpack で SSR する
 
-client / server の 2 コンパイル構成では、クラス名短縮の一致を `ssr: true` で取る。CSS アセットを持つクライアントビルドがリネーム表を `node_modules/.bestcss/rename-map.json` へ書き出し、サーバービルドは表に従って書き換える（**ビルドは client → server の順**。Vite 版と同じ仕組み）:
+client / server の 2 コンパイル構成で `minifyClassNames: true` にする場合は、短縮名の一致を `ssr: true` で取る（既定の内容ハッシュ名なら表の共有もビルド順の制約も不要）。CSS アセットを持つクライアントビルドがリネーム表を `node_modules/.bestcss/rename-map.json` へ書き出し、サーバービルドは表に従って書き換える（**ビルドは client → server の順**。Vite 版と同じ仕組み）:
 
 ```js
 // クライアント側 config

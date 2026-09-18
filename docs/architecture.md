@@ -1,6 +1,6 @@
 > **Stability**: 🌊 living
 > **最終更新**: 2026-09-18
-> **直近の変更 ADR**: [ADR-0014](decisions/0014-stable-class-name-hash.md)
+> **直近の変更 ADR**: [ADR-0015](decisions/0015-opt-in-class-name-minification.md)
 
 # Architecture — bestcss
 
@@ -50,6 +50,7 @@ bestcss/
 - core と vite-plugin の分離: 変換ロジックをバンドラー非依存に保ち、Phase 4（Next.js 等への展開）でコアを再利用できるようにする
 - クラス名は **正規化した** CSS 内容のみの FNV-1a ハッシュ（`bc` プレフィックス + base36 7 桁固定）: 同一内容をファイル横断で同一クラス名に収束させ、重複排除の基盤にする。正規化を挟むのは、書式ゆらぎ（インデント / コメント）でクラス名が変わると長期キャッシュが失効し、収束も成立しないため（[ADR-0014](decisions/0014-stable-class-name-hash.md)）
 - 命名方針は `naming` オプションで注入可能: ハッシュアルゴリズム・クラス名・`@keyframes` 名を差し替えられる（ビルド時のみ動くためゼロランタイムは崩れない）
+- クラス名短縮（ADR-0004）は **opt-in**（`minifyClassNames: true`）: 短縮名はバンドル全体の頻度順で決まり無関係な変更で動くため、既定は内容ハッシュ名のまま出荷して長期キャッシュを守る（[ADR-0015](decisions/0015-opt-in-class-name-minification.md)）
 - `${}` 補間はビルドエラー: charter の「ランタイム動的スタイルはやらない」を実装レベルで強制する。動的値は CSS カスタムプロパティで表現する。`css` スタブの型（`values: never[]`）でも拒否する
 
 ## 外部依存

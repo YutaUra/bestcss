@@ -70,10 +70,13 @@ export interface BestCssSsrOptions {
 export interface BestCssOptions {
   /**
    * ビルド時にクラス名を使用頻度順の短い名前（a, b, ...）へ振り直す。
-   * 無効化は、SSR した HTML を長期キャッシュする等でクラス名の
-   * ビルド間安定性を優先したい場合を想定している
    *
-   * @default true
+   * opt-in にしている理由: 短縮名はバンドル全体の頻度順で決まるため、
+   * コンポーネントを 1 つ足すだけで既存クラスの名前がずれ、SSR した
+   * HTML と配信 CSS の長期キャッシュが失効する。効果は class 属性
+   * -48% / 合計 gzip -14%（bench/RESULTS.md）
+   *
+   * @default false
    */
   minifyClassNames?: boolean;
   /**
@@ -124,7 +127,7 @@ export interface BestCssOptions {
 }
 
 export function bestCss(options: BestCssOptions = {}): Plugin {
-  const minifyClassNames = options.minifyClassNames ?? true;
+  const minifyClassNames = options.minifyClassNames ?? false;
   const layers = options.layers;
   const naming = options.naming;
   const classNamePrefixes = resolveNaming(naming).classNamePrefixes;

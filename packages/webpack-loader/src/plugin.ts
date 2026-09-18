@@ -13,7 +13,11 @@ export interface BestCssWebpackPluginOptions {
   /**
    * ビルド時にクラス名を使用頻度順の短い名前（a, b, ...）へ振り直す。
    *
-   * @default true
+   * opt-in にしている理由: 短縮名はバンドル全体の頻度順で決まるため、
+   * コンポーネントを 1 つ足すだけで既存クラスの名前がずれ得る。既定の
+   * 内容ハッシュ名は内容アドレスなのでビルドを跨いで安定する
+   *
+   * @default false
    */
   minifyClassNames?: boolean;
   /**
@@ -97,7 +101,7 @@ export class BestCssWebpackPlugin {
   private readonly classNamePrefixes: readonly string[];
 
   constructor(options: BestCssWebpackPluginOptions = {}) {
-    this.minifyClassNames = options.minifyClassNames ?? true;
+    this.minifyClassNames = options.minifyClassNames ?? false;
     this.layers = options.layers;
     this.ssr = options.ssr ?? false;
     this.classNamePrefixes =

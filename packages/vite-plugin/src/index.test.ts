@@ -72,8 +72,17 @@ describe("bestCss プラグイン", () => {
     expect(css).toMatch(/color:\s*red/);
   });
 
-  it("production build ではクラス名が短縮される（デフォルト有効）", async () => {
+  it("デフォルトではクラス名を短縮せず、内容ハッシュ名のまま出荷する", async () => {
     const { js, css } = await buildFixture();
+
+    expect(js).toMatch(/"bc[0-9a-z]{7}"/);
+    expect(css).toMatch(/\.bc[0-9a-z]{7}/);
+  });
+
+  it("minifyClassNames: true で頻度順の短い名前に短縮される", async () => {
+    const { js, css } = await buildFixture(FIXTURE, {
+      minifyClassNames: true,
+    });
 
     // fixture のクラスは 1 つなので最短の "a" が割り当てられる
     expect(js).toMatch(/"a"/);
@@ -168,7 +177,9 @@ describe("bestCss プラグイン", () => {
   });
 
   it("クラス名短縮と重複排除が両立する", async () => {
-    const { css } = await buildFixture(DEDUP_FIXTURE);
+    const { css } = await buildFixture(DEDUP_FIXTURE, {
+      minifyClassNames: true,
+    });
 
     // 同一内容 2 ファイル分が 1 ルールに収束し、名前も短縮される
     expect(css.match(/\.a\b/g)).toHaveLength(1);

@@ -15,7 +15,7 @@ bestCss({ ssr: true })
 
 これで内部的に次が有効になる:
 
-1. **クラス名短縮のリネーム表をビルド間で自動共有** — SSR された HTML と配信 CSS の短縮名が一致する。ビルドは **client → server の順**（順序違反は明示的なエラーで検出される）
+1. **クラス名短縮のリネーム表をビルド間で自動共有**（`minifyClassNames: true` のときのみ） — SSR された HTML と配信 CSS の短縮名が一致する。ビルドは **client → server の順**（順序違反は明示的なエラーで検出される）
 2. **SSR ビルドに CSS import を付与しない** — サーバーバンドルに必要なのはクラス名だけ
 3. **ルート単位の CSS 分割**（`routesDir` 指定時） — ルート専用 CSS はそのルートにのみ、共有 CSS は共有ファイルとして配信される
 
@@ -66,9 +66,9 @@ import { routeCssHrefs } from "@bestcss/vite-plugin/route-css";
 
 クライアントエントリも dev 専用エントリも不要。dev / prod とも同じ経路で配信される。
 
-## リネーム表を使わない選択肢
+## リネーム表を使わない選択肢（既定）
 
-`minifyClassNames: false` にすると内容ハッシュ名（`bc...`）のまま出力される。内容ハッシュは独立したビルド間でも決定的に一致するため、表の共有なしで HTML と CSS が一致する（[core: 内部のしくみ](../../core/docs/02-how-it-works.md) 参照）。
+既定（`minifyClassNames` 未指定）では内容ハッシュ名（`bc...`）のまま出力される。内容ハッシュは独立したビルド間でも決定的に一致するため、**表の共有も client → server のビルド順も不要**で HTML と CSS が一致する（[core: 内部のしくみ](../../core/docs/02-how-it-works.md) 参照）。サイズを詰めたいときだけ `minifyClassNames: true` にし、ビルド順の制約を受け入れる。
 
 ## routesDir を使わない場合の CSS 配信（ssr: true のみ）
 

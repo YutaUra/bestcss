@@ -41,7 +41,7 @@ See [css`` syntax](/en/core/01-syntax) for what you can write.
 
 ```ts
 bestCss({
-  minifyClassNames?: boolean,        // default: true
+  minifyClassNames?: boolean,        // default: false (opt-in)
   ssr?: boolean | { routesDir?: string },
   layers?: string[],                 // cascade layer order (lowest → highest)
   targets?: string | string[] | false, // supported browsers (browserslist query)
@@ -49,7 +49,7 @@ bestCss({
 })
 ```
 
-- **minifyClassNames** — renames classes to short, frequency-ordered names (`a`, `b`, ...) in production builds. Dev always uses content-hash names (`bc...`). Set `false` when you need class names stable across builds (e.g. long-cached SSR HTML)
+- **minifyClassNames** — renames classes to short, frequency-ordered names (`a`, `b`, ...) in production builds (-48% class attributes, -14% total gzip in our benchmark). **Opt-in**: off by default, so builds ship content-hash names (`bc...`). Minified names come from a whole-bundle frequency ranking, so adding a single component shifts existing class names — content-hash names are stable across builds, so the default is the one that does not break long-lived caches. Turn it on for size-sensitive production builds
 - **ssr** — declares an SSR project. See [SSR / MPA integration](/en/vite/01-ssr)
 - **layers** — layer-order declaration required to use `@layer name { ... }` inside css``. Every name used must be declared (see [css`` syntax](/en/core/01-syntax))
 - **targets** — target browsers for nesting flattening / vendor prefixing. Auto-detects the project browserslist config when omitted; `false` disables (see [css`` syntax](/en/core/01-syntax))
