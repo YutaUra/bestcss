@@ -1,6 +1,6 @@
 {
   "name": "@bestcss/webpack-loader",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "bestcss の webpack / Next.js (Turbopack) 統合。loader と最適化プラグイン",
   "keywords": [
     "css",
