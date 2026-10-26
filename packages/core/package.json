@@ -47,11 +47,11 @@
   },
   "dependencies": {
     "@jridgewell/sourcemap-codec": "1.6.0",
-    "browserslist": "4.29.3",
+    "browserslist": "4.29.4",
     "lightningcss": "1.33.0",
     "magic-string": "0.30.21",
     "modern-normalize": "3.0.1",
-    "oxc-parser": "0.154.0"
+    "oxc-parser": "0.155.0"
   },
   "devDependencies": {
     "@types/node": "26.6.5"
