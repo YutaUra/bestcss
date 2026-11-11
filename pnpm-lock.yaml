@@ -331,8 +331,8 @@ importers:
         specifier: 1.33.0
         version: 1.33.0
       magic-string:
-        specifier: 0.30.21
-        version: 0.30.21
+        specifier: 1.4.5
+        version: 1.4.5
       modern-normalize:
         specifier: 3.0.1
         version: 3.0.1
